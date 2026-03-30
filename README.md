@@ -4,9 +4,9 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 
 **Maintainer:** Sammy Lin | **Last Updated:** 2026-03-30
 
-## Onboarding Prompt
+## Onboarding Prompts
 
-Paste the following prompt in any AI coding tool (Claude Code, Kiro, Cursor, Windsurf, etc.) to automatically fetch the standards and set them up in your project:
+### Claude Code
 
 ```
 Fetch and read the following files as the development standards for this project:
@@ -17,20 +17,25 @@ Fetch and read the following files as the development standards for this project
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/project-ops.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/ai-behavior.md
 
-Then, based on the tool you are running in, create the appropriate config file:
+Create a CLAUDE.md file in the project root with all the standards content.
+Add "source: https://github.com/SammyLin/aicoding" at the top.
+If CLAUDE.md already exists, append the standards after the existing content.
+```
 
-- Claude Code → create CLAUDE.md
-- Kiro → create .kiro/steering/standards.md
-- Cursor → create .cursorrules
-- Windsurf → create .windsurfrules
-- Other tools → create the equivalent config file
+### Kiro
 
-Config file format:
-1. Add "source: https://github.com/SammyLin/aicoding" at the top
-2. Write all standards content below, preserving the original structure
-3. If a config file already exists, append the standards after the existing content
+```
+Fetch and read the following files as the development standards for this project:
 
-When done, report which files you created.
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/code-quality.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/architecture.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/security.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/project-ops.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/ai-behavior.md
+
+Create .kiro/steering/standards.md with all the standards content.
+Add "source: https://github.com/SammyLin/aicoding" at the top.
+If the file already exists, append the standards after the existing content.
 ```
 
 ## Standards
@@ -45,9 +50,10 @@ When done, report which files you created.
 
 ## How It Works
 
-1. AI agent reads these files at session start
-2. Rules are applied as constraints during code generation
-3. Agent follows verification sequence after each implementation
+1. Copy the prompt for your tool above
+2. Paste it in a new session at your project root
+3. AI fetches the standards and creates the config file
+4. Standards are applied as constraints during code generation
 
 ## License
 
