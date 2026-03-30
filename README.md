@@ -6,10 +6,10 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 
 ## Onboarding Prompt
 
-在任何 AI coding tool（Claude Code、Kiro、Cursor、Windsurf…）的新專案中貼上這段 prompt，AI 就會自動讀取 standards 並設定到專案裡：
+Paste the following prompt in any AI coding tool (Claude Code, Kiro, Cursor, Windsurf, etc.) to automatically fetch the standards and set them up in your project:
 
 ```
-讀取以下檔案，作為這個專案的開發標準：
+Fetch and read the following files as the development standards for this project:
 
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/code-quality.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/architecture.md
@@ -17,20 +17,20 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/project-ops.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/ai-behavior.md
 
-然後根據你目前運行的工具，自動建立對應的設定檔：
+Then, based on the tool you are running in, create the appropriate config file:
 
-- Claude Code → 建立 CLAUDE.md，寫入 standards 內容
-- Kiro → 建立 .kiro/steering/standards.md，寫入 standards 內容
-- Cursor → 建立 .cursorrules，寫入 standards 內容
-- Windsurf → 建立 .windsurfrules，寫入 standards 內容
-- 其他工具 → 建立該工具的對應設定檔
+- Claude Code → create CLAUDE.md
+- Kiro → create .kiro/steering/standards.md
+- Cursor → create .cursorrules
+- Windsurf → create .windsurfrules
+- Other tools → create the equivalent config file
 
-設定檔內容格式：
-1. 在檔案開頭標註 source: https://github.com/SammyLin/aicoding
-2. 將所有 standards 整合寫入，保留原始結構
-3. 如果專案已有設定檔，將 standards 追加到現有內容之後
+Config file format:
+1. Add "source: https://github.com/SammyLin/aicoding" at the top
+2. Write all standards content below, preserving the original structure
+3. If a config file already exists, append the standards after the existing content
 
-完成後回覆你建立了哪些檔案。
+When done, report which files you created.
 ```
 
 ## Standards
