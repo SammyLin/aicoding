@@ -4,9 +4,31 @@
 
 - Research before coding. Read relevant existing files first.
 - Plan before executing. For features touching >3 files, create a plan first.
+- **One feature at a time. Complete and verify before moving to the next.**
 - Small, verifiable steps. Run verification after each meaningful change.
 - Follow existing patterns. Do not introduce your preferred patterns over the project's.
-- No overengineering. Implement what was asked. No speculative abstractions.
+- **No overengineering. Implement what was asked. No speculative abstractions.**
+
+## When to Ask vs. When to Do
+
+**Ask first when:**
+- Task scope is unclear or has multiple possible approaches
+- Affects >3 files or requires architecture decisions
+- Involves external APIs, secrets, or security-sensitive code
+- You're unsure about the expected output format or acceptance criteria
+
+**Just do it when:**
+- Task is well-defined and straightforward
+- Only 1-2 files need changes
+- You're confident about the implementation approach
+- After completion, report what you did (not during the process)
+
+## Decision Logging
+
+When you make architectural or design choices:
+- Document the "why" in commit messages or PR comments
+- If choosing between multiple approaches, briefly note the tradeoffs
+- This helps future maintainers understand your reasoning
 
 ## What You Must Not Do
 
