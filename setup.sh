@@ -21,6 +21,7 @@ FILES=(
   "lang-node.md"
   "lang-python.md"
   "lang-go.md"
+  "lang-frontend.md"
 )
 
 DESCRIPTIONS=(
@@ -33,6 +34,7 @@ DESCRIPTIONS=(
   "Node/TypeScript: pnpm, ESLint, Prettier, Zod, vitest"
   "Python: uv, ruff, FastAPI, Pydantic, pytest"
   "Go: go mod, golangci-lint, constructor DI, table-driven tests"
+  "Frontend: React, component design, state management, a11y, testing-library"
 )
 
 # --- Parse args ---
@@ -124,7 +126,7 @@ ENTRY
 | **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
 | **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
 | **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
-| **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
+| **Frontend changes** | lang-frontend, harness-engineering, code-quality | Feature-based structure, component design, a11y, browser screenshot verification |
 | **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
 | **Security review** | security | Run 10-item security checklist before completion |
@@ -195,7 +197,7 @@ ENTRY
 | **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
 | **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
 | **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
-| **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
+| **Frontend changes** | lang-frontend, harness-engineering, code-quality | Feature-based structure, component design, a11y, browser screenshot verification |
 | **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
 | **Security review** | security | Run 10-item security checklist before completion |
