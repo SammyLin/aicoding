@@ -95,7 +95,7 @@ Make the running application itself observable and drivable by agents:
 
 For any frontend change, you MUST visually verify the result using [agent-browser](https://github.com/vercel-labs/agent-browser).
 
-agent-browser is a CLI tool that drives Chrome/Chromium via CDP. Install via `npm i -g agent-browser` and run `agent-browser install` to download Chrome. See the [agent-browser SKILL.md](https://github.com/vercel-labs/agent-browser/blob/main/skills/agent-browser/SKILL.md) for full command reference.
+agent-browser is a CLI tool that drives Chrome/Chromium via CDP. Install via `npm i -g agent-browser` and run `agent-browser install` to download Chrome. See `agent-browser-skill.md` for the full command reference.
 
 **Verification sequence for frontend changes:**
 
