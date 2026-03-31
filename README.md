@@ -81,6 +81,8 @@ curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | b
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
 ```
 
+> **Note:** When using `--all`, rule files are downloaded once to `.claude/rules/` and symbolic links are created in `.kiro/steering/` pointing to them — no duplicate files.
+
 ## Standards
 
 ### Core Rules (language-agnostic, always loaded)

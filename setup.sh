@@ -65,6 +65,20 @@ download_standards() {
   done
 }
 
+# --- Create symbolic links from one directory to another ---
+link_standards() {
+  local source_dir="$1"
+  local target_dir="$2"
+  mkdir -p "$target_dir"
+  echo "Creating symbolic links in $target_dir/ -> $source_dir/ ..."
+  for file in "${DOWNLOADED[@]}"; do
+    local rel_path
+    rel_path="$(realpath --relative-to="$target_dir" "$source_dir/$file")"
+    ln -sf "$rel_path" "$target_dir/$file"
+    echo "  ↳ $file -> $rel_path"
+  done
+}
+
 # --- Generate CLAUDE.md entry file ---
 generate_claude_md() {
   local claude_md="CLAUDE.md"
@@ -144,7 +158,10 @@ generate_kiro_steering() {
   local steering_dir=".kiro/steering"
   local entry_file="$steering_dir/standards.md"
 
-  download_standards "$steering_dir"
+  # Skip download if files were already linked (--all mode)
+  if [ "${KIRO_LINKED:-}" != "true" ]; then
+    download_standards "$steering_dir"
+  fi
 
   if [ -f "$entry_file" ]; then
     if grep -q "aicoding standards" "$entry_file" 2>/dev/null; then
@@ -229,7 +246,9 @@ case "$TARGET" in
   all)
     generate_claude_md
     echo ""
-    generate_kiro_steering
+    # Reuse downloaded files via symlinks instead of downloading again
+    link_standards ".claude/rules" ".kiro/steering"
+    KIRO_LINKED=true generate_kiro_steering
     ;;
 esac
 
