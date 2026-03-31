@@ -2,7 +2,37 @@
 
 Harness Engineering is the practice of building the environment — documentation structure, guardrails, feedback loops, and architectural constraints — that enables AI agents to do reliable work at scale. The bottleneck is never the agent's ability to write code, but the lack of structure surrounding it.
 
-When the agent struggles, treat it as an environment design problem. Ask: what is missing — tools, guardrails, documentation — for the agent to proceed reliably? Fix the harness, not the prompt.
+**Core principle: you don't fix the result, you fix the system that produced the result.**
+
+When the agent writes bad code, don't jump in and fix that code. Instead, ask: why was this bad code allowed to pass? Then fix the system — add a linter rule, write a structural test, update CI, improve documentation. Next time the agent (or any agent) makes the same mistake, the system catches it automatically. Humans steer, agents execute.
+
+## Encode Rules as Enforcement, Not Just Documentation
+
+Writing a rule in a markdown file is necessary but not sufficient. Rules that only exist as documentation will eventually be violated. Every important rule should also be encoded as a mechanical check:
+
+| Rule Category | Documentation | Enforcement |
+|--------------|---------------|-------------|
+| **Security** | security.md checklist | CI pipeline: dependency audit, secret scanning, SAST |
+| **Error handling** | lang-*.md error patterns | Custom lint rule: all errors must be wrapped with context |
+| **Architecture boundaries** | architecture.md layer rules | Structural test: handler cannot import repository |
+| **Naming conventions** | lang-*.md naming section | Linter config: enforce naming rules per language |
+| **Commit messages** | project-ops.md git rules | commitlint + husky: reject non-conventional commits |
+| **File size** | project-ops.md (<250 lines) | CI check or custom lint: flag files exceeding limit |
+| **Test coverage** | code-quality.md (>70%) | CI: fail PR if coverage drops below threshold |
+
+### How to Promote a Rule from Docs to Code
+
+When you notice a rule being violated repeatedly:
+
+```
+1. First violation: fix the code, note the pattern.
+2. Second violation: this is now a systemic issue.
+3. Create enforcement:
+   a. Can a linter catch this? → Add a lint rule with remediation message.
+   b. Can a test catch this? → Add a structural test.
+   c. Can CI catch this? → Add a CI check.
+4. The rule now enforces itself. Humans don't need to review for it.
+```
 
 ## Structured Documentation
 
@@ -122,29 +152,60 @@ Write tests that validate project structure, not just business logic:
 
 ## Feedback Loops
 
-Build closed-loop systems: trace failures, cluster error patterns, feed corrections back into the harness.
+The agent does NOT just write code and report done. The agent operates in a closed loop:
 
-- When an agent fails a task, categorize the root cause: missing context, wrong constraint, unclear spec, or genuine bug.
-- Fix the category, not just the instance. Update docs, add a lint rule, or improve the test.
-- When documentation falls short, promote the rule into code (lint rule or structural test).
-- Human taste is fed back into the system continuously: review comments, refactoring PRs, and user-facing bugs are captured as doc updates or encoded directly into tooling.
+```
+Write code → Run tests → Run linter → Check logs → Verify behavior → Self-review → Report
+    ↑                                                                       │
+    └───────────────── Fix and re-run if anything fails ────────────────────┘
+```
 
-### How to Give Feedback as an Agent
+### Agent Self-Verification Checklist
 
-When you encounter a problem or make a mistake, do not just fix it and move on. Strengthen the harness:
+Before reporting any task as complete, the agent MUST:
+
+```
+1. Run tests inside Docker           → docker compose exec app make test
+2. Run linter inside Docker           → docker compose exec app make lint
+3. Check for type errors              → language-specific type checker
+4. Review own code for:
+   - Layer violations (handler importing repo?)
+   - Unwrapped errors (missing context?)
+   - Hardcoded values (should be config?)
+   - Missing tests for new logic
+5. For frontend: take screenshot      → browser agent verification
+6. For API: test with curl            → verify request/response shape
+7. Read logs for warnings/errors      → docker compose logs app
+8. All green → report completion
+   Any red  → fix and re-run from step 1
+```
+
+### Systemic Feedback: Fix the System, Not Just the Code
+
+When the agent makes a mistake or something slips through:
 
 ```
 1. Fix the immediate issue.
-2. Ask: "Could a lint rule, test, or doc update prevent this from happening again?"
-3. If yes → implement the prevention in the same PR.
-4. If the fix belongs in the standards → suggest the update to the user.
+2. Ask: "Why did the system allow this?"
+3. Promote the fix to a permanent guardrail:
+   - Forgot to wrap an error?      → Add lint rule: all errors must have context
+   - Handler imported repository?   → Add structural test for layer violations
+   - Missing input validation?      → Add CI check or middleware
+   - Convention not followed?       → Update docs + add linter enforcement
+   - Same bug could recur?          → Add regression test
+4. Implement the guardrail in the SAME PR as the fix.
+5. Suggest standards update to user if the rule belongs in the shared standards.
 ```
 
-**Examples:**
-- You forgot to wrap an error → add a custom lint rule that flags unwrapped errors.
-- You imported a repository in a handler → add a structural test for layer violations.
-- You didn't know about a project convention → update docs/ with the missing convention.
-- A test was flaky → fix the root cause (shared state, timing), don't just retry.
+The goal: every mistake makes the harness stronger. The same mistake never happens twice.
+
+### Feedback Sources
+
+- **Test failures** → missing logic, edge cases not covered → add test + fix
+- **Lint errors** → style/convention violations → the linter already caught it (good)
+- **Code review comments** → human taste → encode as lint rule or doc update
+- **Runtime errors / logs** → bugs in production → add regression test + monitoring
+- **User-reported issues** → spec mismatch → update product docs + acceptance tests
 
 ### Continuous Harness Improvement Cycle
 
@@ -194,6 +255,9 @@ Escalate to humans only when judgment is required. Push review effort toward age
 
 | Don't | Do Instead |
 |-------|-----------|
+| Jump in and fix agent's code manually | Fix why the system allowed bad code (add lint/test/CI) |
+| Rules only in documentation | Encode rules as linter + structural test + CI check |
+| Write code and report done | Closed loop: write → test → lint → logs → self-review → report |
 | Monolithic AGENTS.md / CLAUDE.md | Short entry file + structured docs/ directory |
 | Knowledge in Slack / Google Docs | Encode decisions as versioned docs in repo |
 | Generic linter error messages | Error messages with remediation instructions |
@@ -203,5 +267,4 @@ Escalate to humans only when judgment is required. Push review effort toward age
 | Manual code review for layer violations | Custom linters catch violations before review |
 | Giant context dumps to agent | Progressive disclosure with pointers |
 | Hope agents follow conventions | Enforce conventions mechanically |
-| Manual weekly cleanup of AI slop | Recurring background agents + golden principles |
-| Opaque external dependencies | In-repo reimplementation with full test coverage |
+| Same mistake happens twice | Every mistake becomes a permanent guardrail |

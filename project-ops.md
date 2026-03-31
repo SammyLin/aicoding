@@ -7,12 +7,78 @@
 - Never commit build artifacts. Respect .gitignore.
 - Colocate tests next to source.
 
-## Git & CI/CD
+## Git Commit Rules
+
+All commit messages MUST be written in English. Follow Conventional Commits strictly.
+
+### Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Rules
+
+1. **Language:** English only. No exceptions.
+2. **Type:** One of: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `build`, `perf`.
+3. **Subject line:**
+   - Use imperative mood: "add feature", not "added feature" or "adds feature"
+   - Lowercase after the colon: `feat: add user auth`, not `feat: Add user auth`
+   - Max 50 characters. No period at the end.
+   - Focus on WHAT changed, not HOW.
+4. **Body** (optional but recommended for non-trivial changes):
+   - Separate from subject with a blank line.
+   - Wrap at 72 characters per line.
+   - Explain WHY the change was made, not what (the diff shows what).
+   - Reference issue numbers: `Fixes #123` or `Closes #456`.
+5. **Breaking changes:** Add `BREAKING CHANGE:` in the footer or `!` after type: `feat!: remove legacy API`.
+6. **Scope** (optional): Module or feature name: `feat(auth): add JWT refresh`.
+
+### Examples
+
+```
+feat(order): add inventory check before order creation
+
+Prevent orders when stock is insufficient. The service layer now
+validates inventory before persisting the order.
+
+Closes #42
+```
+
+```
+fix: handle null response from payment gateway
+
+The gateway returns null instead of an error object on timeout.
+Added explicit null check with retry logic.
+```
+
+```
+refactor(auth): extract token validation to shared middleware
+```
+
+### Enforcement
+
+- Set up commitlint + husky in every project to enforce format via git hooks.
+- CI should also validate commit messages on PRs.
+- If commitlint is not yet set up, set it up as part of project initialization.
+
+```
+# Node project setup:
+pnpm add -D @commitlint/cli @commitlint/config-conventional husky
+echo "export default { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+pnpm exec husky init
+echo "pnpm exec commitlint --edit \$1" > .husky/commit-msg
+```
+
+## Git Workflow
 
 - Never commit directly to main. All changes go through PRs.
-- Use Conventional Commits: feat:, fix:, chore:, docs:, refactor:, test:, ci:.
 - Use Semantic Versioning: major.minor.patch.
-- Every PR must pass: lint, test, build.
+- Every PR must pass: lint, test, build, commitlint.
 - Do NOT commit unless the user explicitly asks.
 
 ## Docker-First Development
