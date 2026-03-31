@@ -83,6 +83,8 @@ curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | b
 
 ## Standards
 
+### Core Rules (language-agnostic, always loaded)
+
 | File | Description |
 |------|-------------|
 | [code-quality.md](code-quality.md) | TDD workflow, API endpoint flow, error handling, typing |
@@ -91,6 +93,14 @@ curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | b
 | [project-ops.md](project-ops.md) | Docker-first development, new project setup, git, CI/CD |
 | [ai-behavior.md](ai-behavior.md) | 5-step task execution flow, completion report format |
 | [harness-engineering.md](harness-engineering.md) | Browser verification, feedback loops, docs structure, guardrails |
+
+### Language-Specific Rules (apply based on project language)
+
+| File | Language | Covers |
+|------|----------|--------|
+| [lang-node.md](lang-node.md) | Node / TypeScript | pnpm, ESLint + Prettier, Zod, vitest, Dockerfile |
+| [lang-python.md](lang-python.md) | Python | uv, ruff, FastAPI, Pydantic, pytest, Dockerfile |
+| [lang-go.md](lang-go.md) | Go | go mod, golangci-lint, constructor DI, table-driven tests, Dockerfile |
 
 ## Generated File References
 
@@ -121,9 +131,9 @@ You do NOT need to read them manually — they are already available to you.
 | Task | Primary Rules | Key Actions |
 |------|--------------|-------------|
 | **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
-| **Write backend code** | code-quality, architecture | TDD flow, layered architecture, DI, typed interfaces |
-| **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
-| **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
+| **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
+| **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
+| **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
 | **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
 | **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
@@ -171,9 +181,9 @@ You do NOT need to read them manually — they are already available to you.
 | Task | Primary Rules | Key Actions |
 |------|--------------|-------------|
 | **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
-| **Write backend code** | code-quality, architecture | TDD flow, layered architecture, DI, typed interfaces |
-| **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
-| **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
+| **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
+| **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
+| **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
 | **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
 | **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |

@@ -13,41 +13,39 @@ You MUST follow these rules when writing, reviewing, or modifying code.
 ## Style
 
 - Apply the project's configured linter and formatter. Do not disable rules without explicit user approval.
-- Follow the naming conventions documented in this project. If none exist, use: snake_case for Python files/functions, PascalCase for classes, camelCase for Go unexported.
+- Follow the naming conventions in the language-specific rules (lang-node.md / lang-python.md / lang-go.md).
 - No commented-out code. No dead code. Delete it.
 
 ## How to Implement an API Endpoint
 
-Follow this sequence for any new backend endpoint:
+Refer to the language-specific file for exact file names and commands. The general flow:
 
 ```
-1. Define the request/response types     → model.go / schemas.py / types.ts
-2. Write the service test                → test_service.py / service_test.go / service.test.ts
-3. Implement the service method          → service.go / service.py / service.ts
+1. Define the request/response types     → domain types / schemas
+2. Write the service test                → test for business logic
+3. Implement the service method          → business logic layer
 4. Run the test — confirm it passes
-5. Write the handler (thin wrapper)      → handler.go / router.py / controller.ts
-6. Register the route                    → main.go / app.py / index.ts
+5. Write the handler (thin wrapper)      → HTTP layer (parse → service → respond)
+6. Register the route                    → composition root
 7. Update OpenAPI spec if applicable
 8. Run full test suite + linter
-9. Test manually via curl or browser agent:
-   curl -X POST http://localhost:<port>/api/<endpoint> -d '{"key": "value"}'
+9. Test manually via curl or browser agent
 ```
 
 ## Error Handling
 
 - Use specific error types with actionable messages.
-  - Go: fmt.Errorf("context: %w", err) — always wrap with context. Never panic for expected failures.
-  - Python: domain-specific exception classes. Raise from services, catch and convert to HTTP at handler layer only.
+- Throw/raise from service layer. Catch and convert to HTTP status at handler layer only.
 - Never use catch-all exception handlers that silently swallow errors.
 - Every error must carry: what operation failed, why it failed, and enough context to reproduce.
+- See lang-node.md / lang-python.md / lang-go.md for language-specific error patterns.
 
 ## Types & Interfaces
 
 - Use strict typing everywhere. No untyped function signatures.
-  - Go: all function parameters and returns must have explicit types.
-  - Python: type hints on all function signatures. Use Protocol for structural typing.
-- Define typed interfaces at module boundaries: Pydantic models for runtime validation, type hints for function signatures, OpenAPI specs for APIs.
+- Define typed interfaces at module boundaries.
 - All API endpoints return a consistent shape or the project's documented convention.
+- See the language file for validation libraries (Zod, Pydantic, etc.) and DI patterns.
 
 ## Testing
 
@@ -72,9 +70,9 @@ Write tests BEFORE implementation (TDD). Follow this exact sequence:
 ### Step 3: Verify everything
 
 ```
-1. Run full test suite   → make test / pytest / go test ./... / npm test
-2. Run linter            → make lint / ruff check / golangci-lint run / npm run lint
-3. Run type checker      → mypy / tsc --noEmit (if applicable)
+1. Run full test suite   → make test (inside Docker)
+2. Run linter            → make lint (inside Docker)
+3. Run type checker      → if applicable
 4. All must pass before reporting completion.
 ```
 
@@ -82,7 +80,7 @@ Write tests BEFORE implementation (TDD). Follow this exact sequence:
 
 - Minimum coverage: >70% on production code. For MVP, >30% is acceptable.
 - Use the test command documented in the project config. Do not guess.
-- Colocate tests next to source files. Use the project's naming convention (e.g., `_test.go`, `test_*.py`, `*.test.ts`).
+- Colocate tests next to source files.
 - Mock external dependencies (DB, APIs, file system). Never make real network calls in unit tests.
 - Each test must be independent and idempotent — no shared mutable state between tests.
-- Name tests descriptively: `test_create_order_returns_error_when_inventory_empty`, not `test_order_1`.
+- Name tests descriptively. See the language file for naming conventions.

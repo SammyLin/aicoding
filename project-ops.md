@@ -30,15 +30,14 @@ When starting a new project from scratch:
 2. Create base files:
    a. .gitignore          ← Language-specific ignores + .env, node_modules, dist, etc.
    b. .env.example         ← All required env vars with placeholder values
-   c. Dockerfile           ← Multi-stage build (see rules below)
+   c. Dockerfile           ← Multi-stage build (see lang-*.md for template)
    d. docker-compose.yml   ← App + all dependent services (DB, cache, etc.)
    e. Makefile             ← Wraps Docker commands (see below)
 
-3. Create the application scaffold:
-   a. Initialize the language project (see "Package Manager" below)
-   b. Set up linter + formatter (see "Linter & Formatter Setup" below)
-   c. Create src/ directory with feature-based structure (see architecture.md)
-   d. Create first /health endpoint to validate the setup works
+3. Create the application scaffold (refer to the language-specific rules):
+   - Node/TypeScript → see lang-node.md
+   - Python          → see lang-python.md
+   - Go              → see lang-go.md
 
 4. Verify the setup:
    docker compose up -d
@@ -77,109 +76,14 @@ shell:
 	docker compose exec app bash
 ```
 
-## Package Manager
-
-Use the following package managers. Do NOT use alternatives unless the project already has one configured.
-
-| Language | Package Manager | Init Command | Lockfile |
-|----------|----------------|-------------|----------|
-| **TypeScript / JavaScript** | pnpm | `pnpm init` | `pnpm-lock.yaml` |
-| **Python** | uv | `uv init` | `uv.lock` |
-| **Go** | go mod | `go mod init <module>` | `go.sum` |
-
-### pnpm (Node)
-
-```
-1. pnpm init
-2. Use pnpm for all operations:
-   pnpm install / pnpm add <pkg> / pnpm add -D <pkg> / pnpm run <script>
-3. Commit pnpm-lock.yaml. Never commit node_modules.
-4. In Dockerfile: use corepack enable && corepack prepare pnpm@latest --activate
-```
-
-### uv (Python)
-
-```
-1. uv init
-2. Use uv for all operations:
-   uv add <pkg> / uv add --dev <pkg> / uv run <command> / uv sync
-3. Commit uv.lock and pyproject.toml.
-4. In Dockerfile: COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-```
-
-### go mod (Go)
-
-```
-1. go mod init <module-path>
-2. Use go mod for all operations:
-   go get <pkg> / go mod tidy
-3. Commit go.mod and go.sum.
-```
-
-### Rules
-
-- Always commit the lockfile. Never .gitignore it.
-- Never mix package managers (e.g., npm + pnpm, pip + uv) in the same project.
-- If the project already uses a different package manager, keep using it. Do not migrate without user approval.
-
-## Linter & Formatter Setup
-
-Every project MUST have a linter and formatter configured from the first commit. If the project has no linter, set one up before writing any feature code.
-
-### Per-Language Setup
-
-**TypeScript / JavaScript (pnpm):**
-
-```
-1. Install: pnpm add -D eslint prettier typescript-eslint @eslint/js
-2. Create eslint.config.js (flat config)
-3. Create .prettierrc
-4. Add to package.json scripts:
-   "lint": "eslint . && prettier --check .",
-   "lint:fix": "eslint --fix . && prettier --write ."
-5. Verify: pnpm run lint
-```
-
-**Python (uv):**
-
-```
-1. Install: uv add --dev ruff
-2. Add [tool.ruff] section to pyproject.toml:
-   [tool.ruff]
-   line-length = 120
-   [tool.ruff.lint]
-   select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
-3. Add to Makefile:
-   lint-local: uv run ruff check . && uv run ruff format --check .
-   lint-fix: uv run ruff check --fix . && uv run ruff format .
-4. Verify: uv run ruff check . && uv run ruff format --check .
-```
-
-**Go (go mod):**
-
-```
-1. Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-2. Create .golangci.yml with enabled linters (govet, errcheck, staticcheck, unused, gosimple)
-3. Add to Makefile:
-   lint-local: golangci-lint run ./... && go vet ./...
-4. Verify: golangci-lint run ./...
-```
-
-### Rules
-
-- Do NOT disable linter rules to bypass errors. Fix the code.
-- Do NOT add suppression comments (e.g., `// nolint`, `# noqa`, `eslint-disable`) without user approval.
-- If the project already has a linter configured, use it. Do not switch to a different linter.
-- If no linter exists and the language is not listed above, ask the user which linter to use.
-- Linter + formatter MUST run inside Docker via `make lint`. Add the tool installation to the Dockerfile build stage.
-
 ### Dockerfile Rules
 
 - Use multi-stage builds. Build stage installs dependencies and compiles; runtime stage copies only artifacts.
-- Run as non-root user (`USER appuser`).
+- Run as non-root user.
 - Include HEALTHCHECK.
-- Do not copy .env, .git, node_modules, or dependency caches into the image.
+- Do not copy .env, .git, or dependency caches into the image.
 - Pin base image versions (e.g., `node:20-slim`, not `node:latest`).
+- See lang-node.md / lang-python.md / lang-go.md for Dockerfile templates.
 
 ### docker-compose.yml Rules
 
@@ -206,6 +110,26 @@ docker compose exec app make lint     # Run linter inside container
 
 Always verify that tests pass inside Docker, not just on host. The Docker environment is the source of truth.
 
+## Package Manager & Linter
+
+Language-specific package managers, linters, and formatters are defined in the language files:
+
+| Language | File | Package Manager | Linter / Formatter |
+|----------|------|----------------|-------------------|
+| Node / TypeScript | lang-node.md | pnpm | ESLint + Prettier |
+| Python | lang-python.md | uv | ruff |
+| Go | lang-go.md | go mod | golangci-lint + gofmt |
+
+### Rules (all languages)
+
+- Every project MUST have a linter and formatter from the first commit.
+- Always commit the lockfile. Never .gitignore it.
+- Never mix package managers in the same project.
+- Do NOT disable linter rules to bypass errors. Fix the code.
+- Do NOT add suppression comments without user approval.
+- If the project already has a package manager or linter, keep using it.
+- Linter + formatter MUST run inside Docker via `make lint`.
+
 ## Observability
 
 - Every service must have a /health endpoint.
@@ -224,8 +148,8 @@ Always verify that tests pass inside Docker, not just on host. The Docker enviro
 - Verify new dependencies are maintained and vulnerability-free.
 - No dependencies for trivial functionality (<20 lines).
 - Remove unused dependencies.
-- Always use the project's lockfile (pnpm-lock.yaml / uv.lock / go.sum).
-- Install via the project's package manager: `pnpm add` / `uv add` / `go get`. Never use npm, pip, or yarn.
+- Always use the project's lockfile.
+- Install via the project's package manager. Never use npm, pip, or yarn directly.
 
 ## Configuration
 
