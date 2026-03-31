@@ -190,17 +190,38 @@ If the project requires multilingual support, choose a framework based on your n
 ## Dockerfile
 
 ```dockerfile
+# --- Build stage ---
 FROM golang:1.23-alpine AS build
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -o /server ./cmd/server
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /server ./cmd/server
 
-FROM alpine:3.19 AS runtime
-RUN adduser -D appuser
+# --- Runtime stage ---
+FROM gcr.io/distroless/static-debian12 AS runtime
 COPY --from=build /server /server
-USER appuser
-HEALTHCHECK CMD wget -qO- http://localhost:8080/health || exit 1
+USER nonroot:nonroot
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD ["/server", "--healthcheck"]
 CMD ["/server"]
+```
+
+### Key points
+
+- **`distroless`**: No shell, no package manager, no OS utilities — minimal attack surface (~2MB base vs ~7MB alpine). Use `debug` tag temporarily if you need to exec into the container.
+- **`-ldflags="-s -w"`**: Strips symbol table and DWARF debug info — typically 20-30% smaller binary.
+- **`nonroot`**: Distroless images ship with a built-in `nonroot` user (UID 65534).
+- **Self-contained healthcheck**: Since distroless has no shell, implement a `--healthcheck` flag in your Go binary that performs an HTTP call to `/health` and exits with the appropriate code. Example:
+
+```go
+// In cmd/server/main.go
+if len(os.Args) > 1 && os.Args[1] == "--healthcheck" {
+    resp, err := http.Get("http://localhost:8080/health")
+    if err != nil || resp.StatusCode != 200 {
+        os.Exit(1)
+    }
+    os.Exit(0)
+}
 ```
