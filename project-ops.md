@@ -19,13 +19,62 @@
 
 All services run in Docker. Use `docker compose` as the standard development environment.
 
-### Project Setup
+### New Project Setup (Step-by-Step)
 
-When starting a new project or adding a service:
+When starting a new project from scratch:
 
-1. Create a `Dockerfile` with multi-stage build (build stage + runtime stage).
-2. Create a `docker-compose.yml` for local development with all required services (DB, cache, queue, etc.).
-3. Create a `Makefile` or `justfile` that wraps Docker commands for common operations.
+```
+1. Create project directory and initialize git:
+   mkdir <project-name> && cd <project-name> && git init
+
+2. Create base files:
+   a. .gitignore          ← Language-specific ignores + .env, node_modules, dist, etc.
+   b. .env.example         ← All required env vars with placeholder values
+   c. Dockerfile           ← Multi-stage build (see rules below)
+   d. docker-compose.yml   ← App + all dependent services (DB, cache, etc.)
+   e. Makefile             ← Wraps Docker commands (see below)
+
+3. Create the application scaffold:
+   a. Initialize the language project (go mod init / npm init / poetry init)
+   b. Create src/ directory with feature-based structure (see architecture.md)
+   c. Create first /health endpoint to validate the setup works
+
+4. Verify the setup:
+   docker compose up -d
+   curl http://localhost:<port>/health  # Should return 200
+
+5. Create initial commit:
+   git add -A && git commit -m "feat: project scaffold with Docker setup"
+```
+
+### Makefile Template
+
+Every project should have a `Makefile` with at least these targets:
+
+```makefile
+.PHONY: up down build test lint logs shell
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down
+
+build:
+	docker compose build
+
+test:
+	docker compose exec app make test-local
+
+lint:
+	docker compose exec app make lint-local
+
+logs:
+	docker compose logs -f app
+
+shell:
+	docker compose exec app bash
+```
 
 ### Dockerfile Rules
 

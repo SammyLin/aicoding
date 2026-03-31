@@ -16,6 +16,23 @@ You MUST follow these rules when writing, reviewing, or modifying code.
 - Follow the naming conventions documented in this project. If none exist, use: snake_case for Python files/functions, PascalCase for classes, camelCase for Go unexported.
 - No commented-out code. No dead code. Delete it.
 
+## How to Implement an API Endpoint
+
+Follow this sequence for any new backend endpoint:
+
+```
+1. Define the request/response types     → model.go / schemas.py / types.ts
+2. Write the service test                → test_service.py / service_test.go / service.test.ts
+3. Implement the service method          → service.go / service.py / service.ts
+4. Run the test — confirm it passes
+5. Write the handler (thin wrapper)      → handler.go / router.py / controller.ts
+6. Register the route                    → main.go / app.py / index.ts
+7. Update OpenAPI spec if applicable
+8. Run full test suite + linter
+9. Test manually via curl or browser agent:
+   curl -X POST http://localhost:<port>/api/<endpoint> -d '{"key": "value"}'
+```
+
 ## Error Handling
 
 - Use specific error types with actionable messages.

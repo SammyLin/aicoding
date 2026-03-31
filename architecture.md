@@ -89,6 +89,36 @@ src/
 - Cross-module communication goes through interfaces only.
 - A module MUST NOT import another module's internal implementation.
 
+## How to Add a New Feature Module
+
+Follow this exact sequence when creating a new feature:
+
+```
+1. Create the feature directory:
+   src/<feature-name>/
+
+2. Create files in this order:
+   a. model.go / model.py / types.ts       ← Domain types first (no dependencies)
+   b. repository.go / repository.py / repo.ts ← Data access interface + implementation
+   c. service.go / service.py / service.ts   ← Business logic (depends on repository interface)
+   d. handler.go / router.py / controller.ts ← HTTP layer (depends on service interface)
+   e. *_test.go / test_*.py / *.test.ts      ← Tests for service layer (at minimum)
+
+3. Wire dependencies in the composition root:
+   - main.go / main.py / app/dependencies.py / src/index.ts
+
+4. Register routes in the router/handler setup.
+
+5. Update docs if this introduces a new pattern or domain concept.
+```
+
+**Checklist before done:**
+- [ ] Domain types have no I/O, no framework imports
+- [ ] Service depends on interfaces, not concrete types
+- [ ] Handler only parses request, calls service, formats response
+- [ ] Tests cover service layer at minimum
+- [ ] No cross-module imports of internal implementation
+
 ## Extension Point Design
 
 Use when requirements suggest future variability. Do NOT add speculatively.
