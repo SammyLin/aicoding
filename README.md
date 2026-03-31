@@ -4,11 +4,64 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 
 **Core Philosophy:** One feature at a time. Verify before moving on. No overengineering.
 
-**Maintainer:** Sammy Lin | **Last Updated:** 2026-03-30
+**Maintainer:** Sammy Lin | **Last Updated:** 2026-03-31
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    aicoding (GitHub repo)                        │
+│                                                                 │
+│  code-quality.md   architecture.md   security.md                │
+│  project-ops.md    ai-behavior.md    harness-engineering.md     │
+│                          │                                      │
+│                      setup.sh                                   │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+              curl ... setup.sh | bash
+                           │
+           ┌───────────────┼───────────────┐
+           │               │               │
+           ▼               ▼               ▼
+    ┌─── Claude Code ───┐  │  ┌───── Kiro ────────┐
+    │                    │  │  │                    │
+    │ CLAUDE.md          │  │  │ .kiro/steering/    │
+    │   (entry file,     │  │  │   standards.md     │
+    │    auto-loaded)    │  │  │   (entry file,     │
+    │                    │  │  │    auto-loaded)     │
+    │ .claude/rules/     │  │  │                    │
+    │   code-quality.md  │  │  │   code-quality.md  │
+    │   architecture.md  │  │  │   architecture.md  │
+    │   security.md      │  │  │   security.md      │
+    │   project-ops.md   │  │  │   project-ops.md   │
+    │   ai-behavior.md   │  │  │   ai-behavior.md   │
+    │   harness-eng...md │  │  │   harness-eng...md │
+    │                    │  │  │                    │
+    │ ALL auto-loaded    │  │  │ ALL auto-loaded    │
+    │ at session start   │  │  │ at session start   │
+    └────────────────────┘  │  └────────────────────┘
+                            │
+                   ┌────────┴────────┐
+                   │   AI Agent      │
+                   │   reads rules   │
+                   │   and follows   │
+                   │   step-by-step  │
+                   │   workflows     │
+                   └─────────────────┘
+```
+
+### How auto-loading works
+
+| Tool | Entry File | Rules Directory | Loading |
+|------|-----------|----------------|---------|
+| Claude Code | `CLAUDE.md` | `.claude/rules/*.md` | All loaded at session start automatically |
+| Kiro | `.kiro/steering/standards.md` | `.kiro/steering/*.md` | All `always` inclusion files loaded automatically |
+
+The AI agent does NOT need to manually read these files — they are injected into context at session start.
 
 ## Quick Setup
 
-在專案根目錄執行一行指令即可安裝標準：
+Run one command in your project root:
 
 ### Claude Code
 
@@ -16,36 +69,10 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
 ```
 
-產生的結構：
-
-```
-CLAUDE.md                          ← 短目錄檔 (<200 行)
-.claude/rules/
-├── code-quality.md
-├── architecture.md
-├── security.md
-├── project-ops.md
-├── ai-behavior.md
-└── harness-engineering.md
-```
-
 ### Kiro
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
-```
-
-產生的結構：
-
-```
-.kiro/steering/
-├── standards.md                   ← 短目錄檔
-├── code-quality.md
-├── architecture.md
-├── security.md
-├── project-ops.md
-├── ai-behavior.md
-└── harness-engineering.md
 ```
 
 ### Both (Claude Code + Kiro)
@@ -58,19 +85,86 @@ curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | b
 
 | File | Description |
 |------|-------------|
-| [code-quality.md](code-quality.md) | Code quality, testing, error handling, typing |
-| [architecture.md](architecture.md) | Layered architecture, DI, module boundaries |
-| [security.md](security.md) | Secrets, input validation, MCP server rules |
-| [project-ops.md](project-ops.md) | Project structure, git, CI/CD, observability |
-| [ai-behavior.md](ai-behavior.md) | AI agent behavior rules and quick reference |
-| [harness-engineering.md](harness-engineering.md) | Harness engineering: docs structure, guardrails, feedback loops |
+| [code-quality.md](code-quality.md) | TDD workflow, API endpoint flow, error handling, typing |
+| [architecture.md](architecture.md) | Layered architecture, DI, new feature module step-by-step |
+| [security.md](security.md) | Security checklist (10 items), MCP server rules |
+| [project-ops.md](project-ops.md) | Docker-first development, new project setup, git, CI/CD |
+| [ai-behavior.md](ai-behavior.md) | 5-step task execution flow, completion report format |
+| [harness-engineering.md](harness-engineering.md) | Browser verification, feedback loops, docs structure, guardrails |
+
+## Generated File References
+
+### CLAUDE.md (generated by setup.sh)
+
+```markdown
+# aicoding standards v4.4
+# source: https://github.com/SammyLin/aicoding
+
+## Core Philosophy
+
+One feature at a time. Verify before moving on. No overengineering.
+
+## Standards (auto-loaded from .claude/rules/)
+
+The following rules are automatically loaded into your context at session start.
+You do NOT need to read them manually — they are already available to you.
+
+- **code-quality**: Code quality, testing, error handling, typing
+- **architecture**: Layered architecture, DI, module boundaries
+- **security**: Secrets, input validation, MCP server rules
+- **project-ops**: Project structure, git, CI/CD, observability
+- **ai-behavior**: AI agent behavior rules and quick reference
+- **harness-engineering**: Harness engineering: docs structure, guardrails, feedback loops
+
+## Task Execution Flow
+
+1. Research: read related source files to understand existing patterns
+2. Plan: list files to change, confirm with user if >3 files
+3. Implement: one feature at a time, TDD (test first → implement → verify)
+4. Verify: run tests + lint inside Docker, screenshot for frontend
+5. Report: use the completion report format from ai-behavior rules
+```
+
+### .kiro/steering/standards.md (generated by setup.sh)
+
+```markdown
+---
+inclusion: always
+---
+# aicoding standards v4.4
+# source: https://github.com/SammyLin/aicoding
+
+## Core Philosophy
+
+One feature at a time. Verify before moving on. No overengineering.
+
+## Standards (auto-loaded from .kiro/steering/)
+
+The following steering files are automatically loaded into your context.
+You do NOT need to read them manually — they are already available to you.
+
+- **code-quality**: Code quality, testing, error handling, typing
+- **architecture**: Layered architecture, DI, module boundaries
+- **security**: Secrets, input validation, MCP server rules
+- **project-ops**: Project structure, git, CI/CD, observability
+- **ai-behavior**: AI agent behavior rules and quick reference
+- **harness-engineering**: Harness engineering: docs structure, guardrails, feedback loops
+
+## Task Execution Flow
+
+1. Research: read related source files to understand existing patterns
+2. Plan: list files to change, confirm with user if >3 files
+3. Implement: one feature at a time, TDD (test first → implement → verify)
+4. Verify: run tests + lint inside Docker, screenshot for frontend
+5. Report: use the completion report format from ai-behavior rules
+```
 
 ## How It Works
 
 1. `cd` into your project root
 2. Run the one-liner for your tool (Claude Code / Kiro / Both)
-3. Standards are downloaded and structured into the correct config files
-4. Open your AI tool — it automatically reads the standards and applies them
+3. Standards are downloaded into the tool's config directory
+4. Open your AI tool — it **automatically** reads all standards at session start
 5. Re-run anytime to update to the latest version
 
 ## License

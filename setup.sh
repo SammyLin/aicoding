@@ -87,15 +87,17 @@ ENTRY
 
 One feature at a time. Verify before moving on. No overengineering.
 
-## Standards
+## Standards (auto-loaded from .claude/rules/)
+
+The following rules are automatically loaded into your context at session start.
+You do NOT need to read them manually — they are already available to you.
 
 ENTRY
 
   for i in "${!FILES[@]}"; do
-    # Only list files that were actually downloaded
     for d in "${DOWNLOADED[@]}"; do
       if [ "$d" = "${FILES[$i]}" ]; then
-        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}. See \`.claude/rules/${FILES[$i]}\`" >> "$claude_md"
+        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}" >> "$claude_md"
         break
       fi
     done
@@ -103,12 +105,13 @@ ENTRY
 
   cat >> "$claude_md" << 'ENTRY'
 
-## Before Starting Any Coding Task
+## Task Execution Flow
 
-1. Read this file and the relevant rules to understand project standards
-2. List your implementation steps and confirm the approach with the user
-3. Implement one feature at a time, verify after each change
-4. Report completion with what was done and any decisions made
+1. Research: read related source files to understand existing patterns
+2. Plan: list files to change, confirm with user if >3 files
+3. Implement: one feature at a time, TDD (test first → implement → verify)
+4. Verify: run tests + lint inside Docker, screenshot for frontend
+5. Report: use the completion report format from ai-behavior rules
 ENTRY
 
   echo "✓ Generated $claude_md (entry file)"
@@ -130,6 +133,9 @@ generate_kiro_steering() {
     echo "# --- aicoding standards ${VERSION} ---" >> "$entry_file"
   else
     cat > "$entry_file" << ENTRY
+---
+inclusion: always
+---
 # aicoding standards ${VERSION}
 # source: ${SOURCE}
 ENTRY
@@ -141,14 +147,17 @@ ENTRY
 
 One feature at a time. Verify before moving on. No overengineering.
 
-## Standards
+## Standards (auto-loaded from .kiro/steering/)
+
+The following steering files are automatically loaded into your context.
+You do NOT need to read them manually — they are already available to you.
 
 ENTRY
 
   for i in "${!FILES[@]}"; do
     for d in "${DOWNLOADED[@]}"; do
       if [ "$d" = "${FILES[$i]}" ]; then
-        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}. See \`${FILES[$i]}\`" >> "$entry_file"
+        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}" >> "$entry_file"
         break
       fi
     done
@@ -156,12 +165,13 @@ ENTRY
 
   cat >> "$entry_file" << 'ENTRY'
 
-## Before Starting Any Coding Task
+## Task Execution Flow
 
-1. Read the standards to understand project conventions
-2. List your implementation steps and confirm the approach with the user
-3. Implement one feature at a time, verify after each change
-4. Report completion with what was done and any decisions made
+1. Research: read related source files to understand existing patterns
+2. Plan: list files to change, confirm with user if >3 files
+3. Implement: one feature at a time, TDD (test first → implement → verify)
+4. Verify: run tests + lint inside Docker, screenshot for frontend
+5. Report: use the completion report format from ai-behavior rules
 ENTRY
 
   echo "✓ Generated $entry_file (entry file)"
