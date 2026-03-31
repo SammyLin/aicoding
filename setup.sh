@@ -97,6 +97,13 @@ ENTRY
 
   cat >> "$claude_md" << 'ENTRY'
 
+## MCP: Serena
+
+- Always use Serena MCP tools for codebase navigation and symbol lookup before falling back to file reading.
+- Run `activate_project` + `check_onboarding_performed` at the start of each session if Serena is available.
+- Use Serena's semantic understanding (symbol lookup, references, type hierarchy) instead of relying solely on text search.
+- If Serena is not available, fall back to standard file reading and search tools.
+
 ## Core Philosophy
 
 One feature at a time. Verify before moving on. No overengineering.
@@ -167,6 +174,13 @@ inclusion: always
 ENTRY
 
   cat >> "$entry_file" << 'ENTRY'
+
+## MCP: Serena
+
+- Always use Serena MCP tools for codebase navigation and symbol lookup before falling back to file reading.
+- Run `activate_project` + `check_onboarding_performed` at the start of each session if Serena is available.
+- Use Serena's semantic understanding (symbol lookup, references, type hierarchy) instead of relying solely on text search.
+- If Serena is not available, fall back to standard file reading and search tools.
 
 ## Core Philosophy
 
