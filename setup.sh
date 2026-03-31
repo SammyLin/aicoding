@@ -41,8 +41,8 @@ DESCRIPTIONS=(
 TARGET="claude"
 for arg in "$@"; do
   case "$arg" in
-    --kiro)  TARGET="kiro" ;;
-    --all)   TARGET="all" ;;
+    --kiro)   TARGET="kiro" ;;
+    --all)    TARGET="all" ;;
     --claude) TARGET="claude" ;;
   esac
 done
@@ -75,7 +75,8 @@ link_standards() {
   echo "Creating symbolic links in $target_dir/ -> $source_dir/ ..."
   for file in "${DOWNLOADED[@]}"; do
     local rel_path
-    rel_path="$(realpath --relative-to="$target_dir" "$source_dir/$file")"
+    # 使用 Python 3 替代 realpath 以確保 macOS/Linux 跨平台相容性
+    rel_path=$(python3 -c "import os; print(os.path.relpath('$source_dir/$file', '$target_dir'))")
     ln -sf "$rel_path" "$target_dir/$file"
     echo "  ↳ $file -> $rel_path"
   done
