@@ -118,7 +118,7 @@ When starting a new project from scratch:
 Every project should have a `Makefile` with at least these targets:
 
 ```makefile
-.PHONY: up down build test lint logs shell
+.PHONY: up down build test lint logs shell scan
 
 up:
 	docker compose up -d
@@ -139,17 +139,70 @@ logs:
 	docker compose logs -f app
 
 shell:
-	docker compose exec app bash
+	docker compose exec app sh
+
+scan:
+	trivy image $$(docker compose images -q app)
+```
+
+### .dockerignore (Required)
+
+Every project with a Dockerfile MUST have a `.dockerignore` to prevent secrets and bloat from entering the build context:
+
+```
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+node_modules
+dist
+__pycache__
+*.pyc
+.venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+coverage
+*.md
+LICENSE
+.vscode
+.idea
+docker-compose*.yml
+Makefile
 ```
 
 ### Dockerfile Rules
 
 - Use multi-stage builds. Build stage installs dependencies and compiles; runtime stage copies only artifacts.
-- Run as non-root user.
-- Include HEALTHCHECK.
-- Do not copy .env, .git, or dependency caches into the image.
-- Pin base image versions (e.g., `node:20-slim`, not `node:latest`).
+- Run as non-root user. Never run containers as root in production.
+- Include `HEALTHCHECK` with explicit `--interval`, `--timeout`, `--start-period`, and `--retries`.
+- Do not copy `.env`, `.git`, or dependency caches into the image.
+- Pin base image versions (e.g., `node:20-alpine`, not `node:latest`). For critical workloads, pin to SHA digest.
+- Prefer minimal base images: `alpine` > `slim` > full. For Go, prefer `distroless`.
+- Use `--ignore-scripts` (Node) or equivalent to prevent supply-chain attacks during install.
+- Strip unnecessary files from runtime stage — only copy what the app needs to run.
+- Set `EXPOSE` to document which ports the container listens on.
 - See lang-node.md / lang-python.md / lang-go.md for Dockerfile templates.
+
+### Image Scanning
+
+Scan images for vulnerabilities before deploying. Run in CI and locally:
+
+```bash
+# Using Trivy (recommended)
+trivy image <image-name>:<tag>
+
+# Fail CI if critical/high vulnerabilities found
+trivy image --exit-code 1 --severity CRITICAL,HIGH <image-name>:<tag>
+```
+
+Add to `Makefile`:
+
+```makefile
+scan:
+	trivy image $$(docker compose images -q app)
+```
 
 ### docker-compose.yml Rules
 
@@ -157,6 +210,27 @@ shell:
 - Use named volumes for data persistence.
 - Use `.env` file for configuration. Provide `.env.example` with placeholder values.
 - Expose ports only on localhost (e.g., `127.0.0.1:3000:3000`).
+- Apply security hardening to all services:
+
+```yaml
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:3000:3000"
+    security_opt:
+      - no-new-privileges:true    # Prevent privilege escalation
+    read_only: true                # Read-only root filesystem
+    tmpfs:
+      - /tmp                      # Writable temp dir if needed
+    cap_drop:
+      - ALL                       # Drop all Linux capabilities
+    mem_limit: 512m               # Prevent OOM from taking down host
+    pids_limit: 100               # Prevent fork bombs
+    restart: unless-stopped
+    env_file:
+      - .env
+```
 
 ### Development Workflow
 

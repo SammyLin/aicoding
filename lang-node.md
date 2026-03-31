@@ -149,21 +149,36 @@ If the project requires multilingual support, choose a framework based on your s
 ## Dockerfile
 
 ```dockerfile
-FROM node:20-slim AS build
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# --- Build stage ---
+FROM node:20-alpine AS build
+RUN corepack enable && corepack prepare pnpm@9 --activate
 WORKDIR /app
 COPY pnpm-lock.yaml package.json ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN pnpm run build
+RUN pnpm run build && pnpm prune --prod
 
-FROM node:20-slim AS runtime
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# --- Runtime stage ---
+FROM node:20-alpine AS runtime
+RUN apk add --no-cache dumb-init \
+    && addgroup -S app && adduser -S app -G app
 WORKDIR /app
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json /app/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
-USER node
-HEALTHCHECK CMD curl -f http://localhost:3000/health || exit 1
+COPY --from=build --chown=app:app /app/dist ./dist
+COPY --from=build --chown=app:app /app/node_modules ./node_modules
+COPY --from=build --chown=app:app /app/package.json ./
+USER app
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD node -e "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)throw r})" || exit 1
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/index.js"]
 ```
+
+### Key points
+
+- **alpine over slim**: ~50% smaller base image.
+- **`pnpm prune --prod`**: Removes devDependencies in build stage, then copies only production `node_modules` to runtime — no need for pnpm in runtime.
+- **`--ignore-scripts`**: Prevents arbitrary scripts from running during install (supply-chain attack mitigation).
+- **`dumb-init`**: Proper PID 1 signal handling (graceful shutdown).
+- **`--chown`**: Files owned by non-root user from the start.
+- **No `curl`**: Healthcheck uses Node built-in `fetch` — no extra binary needed.

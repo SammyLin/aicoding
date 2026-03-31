@@ -28,6 +28,20 @@ Run this checklist before reporting any task as complete:
 
 If any item fails, fix it before reporting completion. Do not skip.
 
+## Container & Docker Security
+
+- NEVER use `latest` tag for base images. Pin to specific versions (e.g., `node:20-alpine`, `python:3.12-slim`).
+- ALWAYS run containers as a non-root user. Define `USER` in Dockerfile.
+- ALWAYS include a `.dockerignore` to prevent `.env`, `.git`, and secrets from entering the build context.
+- Use multi-stage builds — runtime image must not contain build tools, compilers, or package managers.
+- Apply `no-new-privileges` security option to prevent privilege escalation.
+- Use `read_only: true` in docker-compose to make the root filesystem read-only.
+- Drop all Linux capabilities with `cap_drop: ALL`. Only add back specific ones if absolutely required.
+- Set memory and PID limits to prevent resource exhaustion attacks.
+- Scan images for CVEs with Trivy (or equivalent) in CI. Fail the pipeline on CRITICAL/HIGH findings.
+- Never store secrets in Docker images or build args. Use runtime environment variables or secret managers.
+- Expose ports only on `127.0.0.1` in development. In production, use a reverse proxy.
+
 ## MCP Server Security
 
 - Prefer official vendor MCP servers over community forks.

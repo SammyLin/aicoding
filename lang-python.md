@@ -161,19 +161,33 @@ If the project requires multilingual support, choose a framework based on your s
 ## Dockerfile
 
 ```dockerfile
+# --- Build stage ---
 FROM python:3.12-slim AS build
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 COPY . .
 
+# --- Runtime stage ---
 FROM python:3.12-slim AS runtime
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
-COPY --from=build /app /app
-RUN useradd -r appuser
+COPY --from=build /app/.venv /app/.venv
+COPY --from=build /app/src /app/src
+RUN useradd -r -s /usr/sbin/nologin appuser
+ENV PATH="/app/.venv/bin:$PATH"
 USER appuser
-HEALTHCHECK CMD curl -f http://localhost:8000/health || exit 1
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
+
+### Key points
+
+- **Only copy `.venv` and `src`**: Runtime stage does not include build tools, `pyproject.toml`, or source files outside `src/`. Significantly smaller image.
+- **No `uv` in runtime**: The virtual environment is self-contained; `uv` is only needed at build time.
+- **Pin uv version**: `ghcr.io/astral-sh/uv:0.6` instead of `:latest` for reproducible builds.
+- **`nologin` shell**: Prevents interactive login as the service user.
+- **No `curl`**: Healthcheck uses Python stdlib `urllib` — no extra binary needed.
+- **`ENV PATH`**: Activates the virtual environment without a shell wrapper.
