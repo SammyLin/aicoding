@@ -27,9 +27,9 @@ FILES=(
 DESCRIPTIONS=(
   "Code quality, testing, error handling, typing"
   "Layered architecture, DI, module boundaries"
-  "Secrets, input validation, MCP server rules"
-  "Project structure, Docker, git, CI/CD, observability"
-  "AI agent behavior rules and quick reference"
+  "Secrets, input validation, MCP/Serena server rules"
+  "Project structure, Docker, git, commit frequency, Prometheus/Grafana observability"
+  "AI agent behavior, commit frequency, MCP/Serena usage, observability awareness"
   "Harness engineering: docs structure, guardrails, feedback loops"
   "Node/TypeScript: pnpm, ESLint, Prettier, Zod, vitest"
   "Python: uv, ruff, FastAPI, Pydantic, pytest"
