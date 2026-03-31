@@ -22,6 +22,7 @@ FILES=(
   "lang-python.md"
   "lang-go.md"
   "lang-frontend.md"
+  "agent-browser-skill.md"
 )
 
 DESCRIPTIONS=(
@@ -35,6 +36,7 @@ DESCRIPTIONS=(
   "Python: uv, ruff, FastAPI, Pydantic, pytest"
   "Go: go mod, golangci-lint, constructor DI, table-driven tests"
   "Frontend: React, component design, state management, a11y, testing-library"
+  "agent-browser CLI reference for frontend browser verification"
 )
 
 # --- Parse args ---
