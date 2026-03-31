@@ -13,7 +13,7 @@ You MUST follow these rules when writing, reviewing, or modifying code.
 ## Style
 
 - Apply the project's configured linter and formatter. Do not disable rules without explicit user approval.
-- Follow the naming conventions in the language-specific rules (lang-node.md / lang-python.md / lang-go.md).
+- Follow the naming conventions in the language-specific rules (lang-node.md / lang-python.md / lang-go.md / lang-frontend.md).
 - No commented-out code. No dead code. Delete it.
 
 ## How to Implement an API Endpoint
