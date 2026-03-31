@@ -1,13 +1,24 @@
 # Frontend Standards
 
-This file contains all frontend-specific conventions. Apply these rules when working on a frontend project (React, Next.js, Vue, or similar SPA/SSR frameworks).
+This file contains all frontend-specific conventions. Apply these rules when working on a frontend project.
 
 ## Framework & Build Tool
 
 ```
-1. Default stack: React + TypeScript + Vite (or Next.js for SSR/SSG)
-2. If the project already uses another framework (Vue, Svelte, Angular), follow that framework's conventions.
-3. Never mix frameworks in the same project.
+1. Default stack: React + TypeScript + Vite
+2. Use React Router for client-side routing.
+3. If the project already uses another framework (Next.js, Vue, Svelte, Angular), follow that framework's conventions.
+4. Never mix frameworks in the same project.
+```
+
+### New Project Setup
+
+```bash
+pnpm create vite my-app --template react-ts
+cd my-app
+pnpm install
+pnpm add react-router-dom @tanstack/react-query
+pnpm add -D @testing-library/react @testing-library/user-event jsdom msw
 ```
 
 ## Package Manager: pnpm
@@ -63,8 +74,8 @@ src/
 │       ├── hooks/                 ← Reusable hooks (useDebounce, useLocalStorage, etc.)
 │       ├── utils/                 ← Pure utility functions
 │       └── types/                 ← Shared types
-├── app/                           ← Routing (pages/layouts for Next.js App Router)
-└── main.tsx                       ← Entry point
+├── routes.tsx                     ← React Router route definitions
+└── main.tsx                       ← Entry point (BrowserRouter + QueryClientProvider)
 ```
 
 - Organize by feature, not by type. `features/order/` over `components/Order*.tsx`.
@@ -193,8 +204,8 @@ These are NOT optional:
 - Lazy-load routes and heavy components with `React.lazy()` + `Suspense`.
 - Memoize expensive computations with `useMemo`. Memoize callbacks with `useCallback` only when passed to memoized children.
 - Do NOT prematurely optimize — only memoize when you measure a performance issue.
-- Images: use `next/image` (Next.js) or `loading="lazy"` for below-the-fold images.
-- Bundle size: audit with `pnpm dlx vite-bundle-visualizer` or `@next/bundle-analyzer`. Keep initial JS under 200KB gzipped.
+- Images: use `loading="lazy"` for below-the-fold images.
+- Bundle size: audit with `pnpm dlx vite-bundle-visualizer`. Keep initial JS under 200KB gzipped.
 
 ## Testing
 
@@ -252,7 +263,7 @@ describe("OrderCard", () => {
 4. Write component tests       → src/features/<feature>/components/Component.test.tsx
 5. Implement components        → src/features/<feature>/components/Component.tsx
 6. Compose page                → src/features/<feature>/FeaturePage.tsx
-7. Add route                   → src/app/ or router config
+7. Add route                   → src/routes.tsx
 8. Run: pnpm run lint && pnpm test
 9. Browser verify              → screenshot at mobile + desktop widths (see harness-engineering.md)
 ```
