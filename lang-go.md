@@ -165,6 +165,28 @@ func TestOrderService_GetOrder_ReturnsErrorWhenNotFound(t *testing.T) {
 }
 ```
 
+## i18n (Internationalization)
+
+If the project requires multilingual support, choose a framework based on your needs:
+
+| Framework | Best For | Key Trait |
+|---|---|---|
+| **go-i18n** | General-purpose translation | Most popular, TOML/JSON/YAML message files, CLDR plural rules |
+| **golang.org/x/text** | Locale-aware formatting | Official Go package, number/date/currency formatting |
+| **gotext** | gettext ecosystem | GNU gettext-compatible (.po/.mo), familiar workflow |
+| **spreak** | Modern gettext + type safety | Built on x/text, supports multiple catalog formats |
+
+**Default recommendation:** `go-i18n` for string translation. Supplement with `golang.org/x/text` if you need locale-aware number/date formatting.
+
+```
+1. Install: go get github.com/nicksnyder/go-i18n/v2
+2. Create a locale directory: locales/{en,zh-TW,...}.toml (or .json/.yaml)
+3. Extract all user-facing strings into message IDs from the start.
+4. Never hardcode user-facing strings — always use localizer.MustLocalize() or equivalent.
+5. Set up language detection middleware (Accept-Language header or user preference).
+6. Use goi18n CLI to extract and merge translation files.
+```
+
 ## Dockerfile
 
 ```dockerfile
