@@ -116,6 +116,22 @@ You do NOT need to read them manually — they are already available to you.
 - **ai-behavior**: AI agent behavior rules and quick reference
 - **harness-engineering**: Harness engineering: docs structure, guardrails, feedback loops
 
+## When to Apply Which Rules
+
+| Task | Primary Rules | Key Actions |
+|------|--------------|-------------|
+| **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
+| **Write backend code** | code-quality, architecture | TDD flow, layered architecture, DI, typed interfaces |
+| **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
+| **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
+| **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
+| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → /health |
+| **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
+| **Security review** | security | Run 10-item security checklist before completion |
+| **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
+| **Write tests** | code-quality | TDD steps, mock externals, descriptive names, run in Docker |
+| **Docker / infra** | project-ops | Multi-stage build, non-root, healthcheck, pin versions |
+
 ## Task Execution Flow
 
 1. Research: read related source files to understand existing patterns
@@ -149,6 +165,22 @@ You do NOT need to read them manually — they are already available to you.
 - **project-ops**: Project structure, git, CI/CD, observability
 - **ai-behavior**: AI agent behavior rules and quick reference
 - **harness-engineering**: Harness engineering: docs structure, guardrails, feedback loops
+
+## When to Apply Which Rules
+
+| Task | Primary Rules | Key Actions |
+|------|--------------|-------------|
+| **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
+| **Write backend code** | code-quality, architecture | TDD flow, layered architecture, DI, typed interfaces |
+| **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
+| **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
+| **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
+| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → /health |
+| **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
+| **Security review** | security | Run 10-item security checklist before completion |
+| **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
+| **Write tests** | code-quality | TDD steps, mock externals, descriptive names, run in Docker |
+| **Docker / infra** | project-ops | Multi-stage build, non-root, healthcheck, pin versions |
 
 ## Task Execution Flow
 
