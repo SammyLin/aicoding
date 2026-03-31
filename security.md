@@ -48,3 +48,13 @@ If any item fails, fix it before reporting completion. Do not skip.
 - Use the minimum required permissions.
 - Never store MCP credentials in committed files.
 - If unsure whether an MCP server is safe, ask the user before proceeding.
+
+### Serena MCP Server
+
+Serena is the recommended MCP server for project understanding and code navigation. When configuring Serena:
+
+- Use Serena in **read-only mode** by default for codebase exploration and comprehension.
+- Only enable write capabilities when explicitly needed and approved by the user.
+- Configure Serena's workspace scope to the current project only — do not grant access to parent directories or unrelated repos.
+- Serena credentials and configuration belong in user-level MCP settings (e.g., `~/.claude/settings.json` or IDE MCP config), NOT in committed project files.
+- Review Serena's permission scope periodically — revoke access that is no longer needed.
