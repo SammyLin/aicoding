@@ -1,4 +1,4 @@
-# AI Development Standards v4.3
+# AI Development Standards v4.4
 
 Standardized rules for AI coding agents. Host publicly so any AI agent can read and apply these standards via onboarding prompt.
 
@@ -18,6 +18,7 @@ Fetch and read the following files as the development standards for this project
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/security.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/project-ops.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/ai-behavior.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/harness-engineering.md
 
 Create a CLAUDE.md file in the project root with all the standards content.
 Add "source: https://github.com/SammyLin/aicoding" at the top.
@@ -40,6 +41,7 @@ Fetch and read the following files as the development standards for this project
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/security.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/project-ops.md
 - https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/ai-behavior.md
+- https://raw.githubusercontent.com/SammyLin/aicoding/refs/heads/main/harness-engineering.md
 
 Create .kiro/steering/standards.md with all the standards content.
 Add "source: https://github.com/SammyLin/aicoding" at the top.
@@ -61,6 +63,7 @@ IMPORTANT: Before starting any coding task:
 | [security.md](security.md) | Secrets, input validation, MCP server rules |
 | [project-ops.md](project-ops.md) | Project structure, git, CI/CD, observability |
 | [ai-behavior.md](ai-behavior.md) | AI agent behavior rules and quick reference |
+| [harness-engineering.md](harness-engineering.md) | Harness engineering: docs structure, guardrails, feedback loops |
 
 ## How It Works
 
