@@ -11,6 +11,12 @@ Follow this exact sequence when you receive a task:
 2. Find and read all related existing files (source, tests, config).
 3. Identify the project's patterns: naming, structure, test style, error handling.
 4. Check docs/ or CLAUDE.md for relevant architecture or design decisions.
+5. Check if the project has i18n requirements:
+   - Look for existing i18n config, translation files, or locale setup.
+   - If i18n is already set up → follow the existing pattern for all new user-facing strings.
+   - If i18n is not set up but the project targets multilingual users → flag this to the user
+     and suggest setting up i18n before hardcoding strings.
+   - See language-specific standards for recommended i18n frameworks.
 ```
 
 ### Step 2: Plan

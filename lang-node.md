@@ -124,6 +124,28 @@ class NotFoundError extends AppError {
 - Mock external deps with vitest mocks or dependency injection.
 - Test naming: `describe("OrderService")` → `it("returns error when inventory empty")`
 
+## i18n (Internationalization)
+
+If the project requires multilingual support, choose a framework based on your stack:
+
+| Framework | Best For | Key Trait |
+|---|---|---|
+| **i18next** | General / multi-framework | Largest ecosystem, plugin-rich, works on server + client |
+| **next-intl** | Next.js (App Router) | First-class Server Components support, type-safe keys |
+| **react-intl (FormatJS)** | React (ICU standard) | Strict ICU MessageFormat, rich date/number formatting |
+| **typesafe-i18n** | TypeScript-first projects | Compile-time type safety, tiny bundle (~1kB) |
+
+**Default recommendation:** `i18next` for general projects, `next-intl` for Next.js.
+
+```
+1. Install the chosen i18n library.
+2. Create a locale directory: src/locales/{en,zh-TW,...}/*.json
+3. Extract all user-facing strings into translation keys from the start.
+4. Never hardcode user-facing strings — always use the translation function (t()).
+5. Set up language detection middleware (Accept-Language header or user preference).
+6. Add a missing-key reporter in development to catch untranslated strings.
+```
+
 ## Dockerfile
 
 ```dockerfile

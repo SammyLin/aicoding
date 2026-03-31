@@ -136,6 +136,28 @@ class NotFoundError(AppError):
 - Test naming: `test_create_order_returns_error_when_inventory_empty`
 - Use `@pytest.fixture` for shared test setup.
 
+## i18n (Internationalization)
+
+If the project requires multilingual support, choose a framework based on your stack:
+
+| Framework | Best For | Key Trait |
+|---|---|---|
+| **Babel** | Flask / general web apps | CLDR-based locale data (dates, numbers, currencies), Jinja2 integration |
+| **django.utils.translation** | Django projects | Built-in, deep Django integration, `makemessages` CLI |
+| **gettext** (stdlib) | CLI tools / zero-dependency | Python built-in, POSIX standard, .po/.mo files |
+| **python-i18n** | Small projects (YAML/JSON) | Simple key-value approach, Rails-like API |
+
+**Default recommendation:** `Babel` for general projects, Django built-in for Django projects.
+
+```
+1. Install the chosen i18n library (Babel: uv add Babel flask-babel).
+2. Create a locale directory: src/locales/{en,zh_TW,...}/LC_MESSAGES/
+3. Extract all user-facing strings into translation keys from the start.
+4. Never hardcode user-facing strings — always use the translation function (_() or gettext()).
+5. Set up locale negotiation (Accept-Language header or user preference).
+6. Use pybabel extract (or makemessages for Django) to keep translation catalogs in sync.
+```
+
 ## Dockerfile
 
 ```dockerfile
