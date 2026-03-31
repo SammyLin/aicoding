@@ -31,20 +31,48 @@ Follow this exact sequence when you receive a task:
 4. If something breaks → fix it before moving on. Do not accumulate failures.
 ```
 
-### Step 4: Verify
+### Step 4: Verify (closed loop — do NOT skip any step)
 
 ```
-1. Run the full test suite inside Docker: docker compose exec app make test
-2. Run linter: docker compose exec app make lint
-3. For frontend changes: take a screenshot with browser agent (see harness-engineering.md)
-4. All must pass before moving to Step 5.
+1. Run tests inside Docker           → docker compose exec app make test
+2. Run linter inside Docker           → docker compose exec app make lint
+3. Check for type errors              → language-specific type checker (if configured)
+4. Self-review your own code for:
+   - Layer violations (handler importing repo directly?)
+   - Unwrapped errors (missing context in error messages?)
+   - Hardcoded values (should be in config / env?)
+   - Missing tests for new logic
+   - Security: input validated? secrets in code? (see security.md checklist)
+5. For frontend: take screenshot       → browser agent, verify layout + interactions
+6. For API: test with curl             → verify request/response shape matches spec
+7. Read logs for warnings/errors       → docker compose logs app
+8. ALL green → move to Step 5
+   ANY red  → fix and re-run from step 1. Do not skip to reporting.
 ```
 
-### Step 5: Report
+### Step 5: Strengthen the Harness (feedback loop)
+
+After fixing any issue during Step 4, ask yourself:
 
 ```
-1. Use the Completion Report format (see below).
-2. Report once at the end. Do not narrate during implementation.
+1. "Could this mistake happen again?"
+2. If yes → add a permanent guardrail in the SAME PR:
+   - Forgot to wrap an error?      → Add lint rule
+   - Handler imported repo?         → Add structural test
+   - Missing input validation?      → Add middleware or CI check
+   - Convention not followed?       → Update docs + add linter enforcement
+   - Same bug could recur?          → Add regression test
+3. If the rule belongs in the shared standards → suggest the update to the user.
+```
+
+The goal: every mistake makes the system stronger. The same mistake never happens twice.
+
+### Step 6: Report
+
+```
+1. Use the Completion Report format below.
+2. Include ALL verification results and any harness improvements made.
+3. Report once at the end. Do not narrate during implementation.
 ```
 
 ### Core Rules
@@ -83,7 +111,13 @@ After finishing a task, report in this format:
 **Verification:**
 - Tests: ✅ passed (X tests)
 - Lint: ✅ passed
+- Type check: ✅ passed
+- Self-review: ✅ no layer violations, errors wrapped, no hardcoded values
 - Browser check: ✅ screenshot verified (frontend only)
+- curl check: ✅ response shape correct (API only)
+
+**Harness strengthened (if applicable):**
+- <lint rule / structural test / CI check added to prevent recurrence>
 
 **Not done (if any):**
 - <anything intentionally skipped and why>
