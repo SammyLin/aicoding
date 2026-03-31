@@ -28,13 +28,21 @@ Follow this exact sequence when you receive a task:
 4. Break the work into small, verifiable steps.
 ```
 
-### Step 3: Implement (one feature at a time)
+### Step 3: Implement (one feature at a time, commit often)
 
 ```
 1. Write the test first (see code-quality.md for TDD flow).
 2. Write the minimum code to make the test pass.
 3. Run tests + linter after each meaningful change.
 4. If something breaks → fix it before moving on. Do not accumulate failures.
+5. COMMIT after each meaningful step — do NOT accumulate a giant changeset.
+   Examples of commit points:
+   - Added scaffold / boilerplate → commit
+   - Implemented core logic → commit
+   - Added tests → commit
+   - Wired integration / routes → commit
+   - Fixed a bug during implementation → commit
+6. If more than 15 minutes have passed without a commit, stop and commit.
 ```
 
 ### Step 4: Verify (closed loop — do NOT skip any step)
@@ -84,6 +92,7 @@ The goal: every mistake makes the system stronger. The same mistake never happen
 ### Core Rules
 
 - **One feature at a time. Complete and verify before moving to the next.**
+- **Commit early and often. Small, frequent commits — never one giant commit at the end.**
 - Follow existing patterns. Do not introduce your preferred patterns over the project's.
 - **No overengineering. Implement what was asked. No speculative abstractions.**
 
@@ -163,6 +172,34 @@ When you make architectural or design choices:
 | Hardcoded config values | Environment variables |
 | Monolithic 500-line file | Split by responsibility |
 | Layer-based directory | Feature-based directory |
+
+## MCP & Project Understanding with Serena
+
+When MCP (Model Context Protocol) servers are available, use **Serena** to deepen your understanding of the project before making changes.
+
+### When to Use Serena
+
+1. **At the start of a new task** — use Serena to understand the project's structure, dependencies, and patterns before writing code.
+2. **Before touching unfamiliar code** — query Serena for symbol definitions, references, and call graphs to understand the impact of your changes.
+3. **When debugging** — use Serena to trace code paths, find related implementations, and understand data flow.
+4. **When planning changes across multiple files** — use Serena to map out the dependency graph and identify all files that need updating.
+
+### Rules
+
+- Prefer Serena over manual file-by-file reading when exploring a large or unfamiliar codebase.
+- Use Serena's semantic understanding (symbol lookup, references, type hierarchy) instead of relying solely on text search.
+- When Serena is configured as an MCP server, use it as your primary tool for codebase navigation and comprehension.
+- If Serena is not available, fall back to standard file reading and search tools.
+- See security.md for MCP server security rules.
+
+## Observability Awareness
+
+When implementing any new feature or service, always consider observability as a first-class concern:
+
+1. **Add logging** at key business logic points (see project-ops.md Observability section).
+2. **Add metrics/counters** at service boundaries — HTTP handlers, external API calls, database operations.
+3. **Propagate trace/correlation IDs** through the request lifecycle.
+4. **Never ship code without instrumentation.** If it's important enough to build, it's important enough to measure.
 
 ## Document Maintenance
 
