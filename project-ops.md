@@ -36,8 +36,9 @@ When starting a new project from scratch:
 
 3. Create the application scaffold:
    a. Initialize the language project (go mod init / npm init / poetry init)
-   b. Create src/ directory with feature-based structure (see architecture.md)
-   c. Create first /health endpoint to validate the setup works
+   b. Set up linter + formatter (see "Linter & Formatter Setup" below)
+   c. Create src/ directory with feature-based structure (see architecture.md)
+   d. Create first /health endpoint to validate the setup works
 
 4. Verify the setup:
    docker compose up -d
@@ -75,6 +76,57 @@ logs:
 shell:
 	docker compose exec app bash
 ```
+
+## Linter & Formatter Setup
+
+Every project MUST have a linter and formatter configured from the first commit. If the project has no linter, set one up before writing any feature code.
+
+### Per-Language Setup
+
+**TypeScript / JavaScript:**
+
+```
+1. Install: npm install -D eslint prettier typescript-eslint @eslint/js
+2. Create eslint.config.js (flat config)
+3. Create .prettierrc
+4. Add to package.json scripts:
+   "lint": "eslint . && prettier --check .",
+   "lint:fix": "eslint --fix . && prettier --write ."
+5. Verify: npm run lint
+```
+
+**Python:**
+
+```
+1. Install: pip install ruff (or add to pyproject.toml dev dependencies)
+2. Add [tool.ruff] section to pyproject.toml:
+   [tool.ruff]
+   line-length = 120
+   [tool.ruff.lint]
+   select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+3. Add to Makefile:
+   lint-local: ruff check . && ruff format --check .
+   lint-fix: ruff check --fix . && ruff format .
+4. Verify: ruff check . && ruff format --check .
+```
+
+**Go:**
+
+```
+1. Install: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+2. Create .golangci.yml with enabled linters (govet, errcheck, staticcheck, unused, gosimple)
+3. Add to Makefile:
+   lint-local: golangci-lint run ./... && go vet ./...
+4. Verify: golangci-lint run ./...
+```
+
+### Rules
+
+- Do NOT disable linter rules to bypass errors. Fix the code.
+- Do NOT add suppression comments (e.g., `// nolint`, `# noqa`, `eslint-disable`) without user approval.
+- If the project already has a linter configured, use it. Do not switch to a different linter.
+- If no linter exists and the language is not listed above, ask the user which linter to use.
+- Linter + formatter MUST run inside Docker via `make lint`. Add the tool installation to the Dockerfile build stage.
 
 ### Dockerfile Rules
 

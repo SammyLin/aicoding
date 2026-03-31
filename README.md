@@ -125,7 +125,7 @@ You do NOT need to read them manually — they are already available to you.
 | **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
 | **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
 | **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
-| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → /health |
+| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
 | **Security review** | security | Run 10-item security checklist before completion |
 | **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
@@ -175,7 +175,7 @@ You do NOT need to read them manually — they are already available to you.
 | **Add new feature module** | architecture, code-quality | Create files in order: model → repo → service → handler → test |
 | **Add API endpoint** | code-quality, architecture, security | Follow API endpoint flow, validate input, check security checklist |
 | **Frontend changes** | harness-engineering, code-quality | Browser screenshot verification required before reporting done |
-| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → /health |
+| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
 | **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
 | **Security review** | security | Run 10-item security checklist before completion |
 | **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
