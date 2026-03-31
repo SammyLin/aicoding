@@ -270,11 +270,148 @@ Language-specific package managers, linters, and formatters are defined in the l
 - If the project already has a package manager or linter, keep using it.
 - Linter + formatter MUST run inside Docker via `make lint`.
 
+## Git Commit Frequency
+
+Commit early and often. Small, frequent commits are always better than one giant commit.
+
+### Rules
+
+1. **Commit after each meaningful change.** Completed a function? Commit. Fixed a bug? Commit. Added a test? Commit. Do not accumulate unrelated changes into a single commit.
+2. **Each commit should be atomic** — it represents one logical change that can be understood in isolation.
+3. **Never wait until a feature is "fully done" to commit.** Break the work into incremental commits:
+   - Scaffold / boilerplate → commit
+   - Core logic → commit
+   - Tests → commit
+   - Wiring / integration → commit
+4. **If you've been working for more than 15 minutes without committing, stop and commit what you have.**
+5. **Prefer 10 small commits over 1 large commit.** Reviewers, bisect, and rollback all benefit from granularity.
+6. **WIP commits are acceptable** on feature branches: `wip: add partial order validation logic`. Squash before merging to main if needed.
+
+### Why This Matters
+
+- Small commits make `git bisect` effective for finding bugs.
+- Small commits make code review faster and more focused.
+- Small commits reduce merge conflict size and complexity.
+- Small commits provide natural checkpoints — if something breaks, you lose less work.
+- AI agents especially benefit: frequent commits create recovery points for long-running tasks.
+
 ## Observability
 
-- Every service must have a /health endpoint.
-- Use JSON structured logging with correlation/trace ID.
-- Include basic metrics for new endpoints.
+Every service MUST be observable from day one. Do not add observability as an afterthought — it is a core requirement alongside business logic.
+
+### Health & Readiness
+
+- Every service must have a `/health` endpoint (liveness check).
+- Add a `/ready` endpoint for readiness checks (dependencies up, DB connected, etc.).
+- Health checks should return structured JSON: `{ "status": "ok", "version": "1.2.3", "uptime": 12345 }`.
+
+### Structured Logging
+
+- Use JSON structured logging in all services. No `console.log` or `print` in production code.
+- Every log entry MUST include: `timestamp`, `level`, `message`, `service`, `correlation_id` (or `trace_id`).
+- Use log levels correctly:
+  - `error`: Something failed and needs attention.
+  - `warn`: Something unexpected but recoverable.
+  - `info`: Key business events (user created, order placed, payment processed).
+  - `debug`: Detailed diagnostic info (disabled in production by default).
+- Log at business-critical points:
+  - Request received / response sent (with duration).
+  - External API calls (start, end, duration, status).
+  - Database queries (in debug mode, with duration).
+  - Authentication events (login, logout, token refresh, failures).
+  - Error and exception handling paths.
+- NEVER log secrets, tokens, passwords, or PII. Mask sensitive fields.
+
+### Metrics & Counters (Prometheus)
+
+Every service MUST expose metrics in Prometheus format at `/metrics`. Place counters and gauges at critical points in the application.
+
+#### Required Metrics
+
+| Metric Type | Name Pattern | Where to Place |
+|-------------|-------------|----------------|
+| **Counter** | `http_requests_total{method, path, status}` | HTTP middleware |
+| **Histogram** | `http_request_duration_seconds{method, path}` | HTTP middleware |
+| **Counter** | `<domain>_operations_total{operation, status}` | Service layer (e.g., `orders_operations_total{operation="create", status="success"}`) |
+| **Counter** | `external_api_calls_total{service, endpoint, status}` | External API client |
+| **Histogram** | `external_api_duration_seconds{service, endpoint}` | External API client |
+| **Gauge** | `db_connections_active` | Database connection pool |
+| **Counter** | `errors_total{type, layer}` | Error handling middleware |
+| **Counter** | `auth_events_total{event}` | Auth middleware (`login_success`, `login_failure`, `token_expired`) |
+
+#### Instrumentation Rules
+
+1. **Add counters at every business-critical code path.** If it matters to the business, measure it.
+2. **Use labels wisely.** Avoid high-cardinality labels (e.g., user IDs, request IDs as label values).
+3. **Instrument at the boundaries:** HTTP handlers, service methods, external calls, DB queries.
+4. **Use histograms for latency**, not averages. Histograms give you percentiles (p50, p95, p99).
+5. **Name metrics consistently:** `<namespace>_<subsystem>_<name>_<unit>` (e.g., `myapp_orders_created_total`).
+
+#### Language-Specific Libraries
+
+| Language | Prometheus Library | Logging Library |
+|----------|-------------------|-----------------|
+| Node/TypeScript | `prom-client` | `pino` (structured JSON) |
+| Python | `prometheus-client` | `structlog` |
+| Go | `prometheus/client_golang` | `slog` (stdlib) or `zerolog` |
+
+### Dashboards & Visualization (Grafana)
+
+- Every service SHOULD have a Grafana dashboard defined as code (JSON or Grafonnet).
+- Store dashboard definitions in `infra/grafana/dashboards/` or `monitoring/dashboards/`.
+- Minimum dashboard panels:
+  - Request rate (requests/second)
+  - Error rate (errors/second, error percentage)
+  - Latency (p50, p95, p99)
+  - Active connections / resource utilization
+- Use the RED method (Rate, Errors, Duration) for service dashboards.
+- Use the USE method (Utilization, Saturation, Errors) for infrastructure dashboards.
+
+### docker-compose Observability Stack
+
+When setting up a new project, include observability services in `docker-compose.yml`:
+
+```yaml
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    volumes:
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+
+volumes:
+  prometheus_data:
+  grafana_data:
+```
+
+### Alerting
+
+- Define alerts in Prometheus alerting rules or Grafana alert rules.
+- At minimum, alert on:
+  - Error rate > threshold (e.g., >5% of requests return 5xx for 5 minutes).
+  - Latency spike (e.g., p99 > 2s for 5 minutes).
+  - Service down (health check failing for >1 minute).
+- Store alert rules as code alongside the service.
+
+### Tracing (Optional but Recommended)
+
+- For multi-service architectures, add distributed tracing via OpenTelemetry.
+- Propagate `trace_id` across service boundaries.
+- Export traces to Jaeger, Zipkin, or Grafana Tempo.
+- At minimum, create spans for: incoming HTTP requests, outgoing HTTP/gRPC calls, database queries.
 
 ## Documentation
 

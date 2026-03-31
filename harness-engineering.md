@@ -88,6 +88,8 @@ Make the running application itself observable and drivable by agents:
 - Make the app bootable per git worktree so agents can launch isolated instances.
 - Expose logs, metrics, and traces to agents via local observability tools (e.g., LogQL, PromQL).
 - Enable agents to reproduce bugs, validate fixes, and record evidence of resolution.
+- Include Prometheus + Grafana in the docker-compose stack so agents can query metrics and verify behavior via dashboards (see project-ops.md Observability section).
+- Agents should verify observability instrumentation as part of the implementation: if a new endpoint or service method has no counter/histogram, that's a missing requirement — not an optional extra.
 
 ### Frontend Verification with Browser Agent
 
