@@ -2,10 +2,82 @@
 
 ## How You Work
 
-- Research before coding. Read relevant existing files first.
-- Plan before executing. For features touching >3 files, create a plan first.
+Follow this exact sequence when you receive a task:
+
+### Step 1: Research
+
+```
+1. Read the task description carefully. Identify what is being asked.
+2. Find and read all related existing files (source, tests, config).
+3. Identify the project's patterns: naming, structure, test style, error handling.
+4. Check docs/ or CLAUDE.md for relevant architecture or design decisions.
+```
+
+### Step 2: Plan
+
+```
+1. List the files you will create or modify.
+2. If touching >3 files or making architecture decisions → present the plan to the user and ask for confirmation.
+3. If touching 1-2 files and the task is clear → proceed directly.
+4. Break the work into small, verifiable steps.
+```
+
+### Step 3: Implement (one feature at a time)
+
+```
+1. Write the test first (see code-quality.md for TDD flow).
+2. Write the minimum code to make the test pass.
+3. Run tests + linter after each meaningful change.
+4. If something breaks → fix it before moving on. Do not accumulate failures.
+```
+
+### Step 4: Verify (closed loop — do NOT skip any step)
+
+```
+1. Run tests inside Docker           → docker compose exec app make test
+2. Run linter inside Docker           → docker compose exec app make lint
+3. Check for type errors              → language-specific type checker (if configured)
+4. Self-review your own code for:
+   - Layer violations (handler importing repo directly?)
+   - Unwrapped errors (missing context in error messages?)
+   - Hardcoded values (should be in config / env?)
+   - Missing tests for new logic
+   - Security: input validated? secrets in code? (see security.md checklist)
+5. For frontend: take screenshot       → browser agent, verify layout + interactions
+6. For API: test with curl             → verify request/response shape matches spec
+7. Read logs for warnings/errors       → docker compose logs app
+8. ALL green → move to Step 5
+   ANY red  → fix and re-run from step 1. Do not skip to reporting.
+```
+
+### Step 5: Strengthen the Harness (feedback loop)
+
+After fixing any issue during Step 4, ask yourself:
+
+```
+1. "Could this mistake happen again?"
+2. If yes → add a permanent guardrail in the SAME PR:
+   - Forgot to wrap an error?      → Add lint rule
+   - Handler imported repo?         → Add structural test
+   - Missing input validation?      → Add middleware or CI check
+   - Convention not followed?       → Update docs + add linter enforcement
+   - Same bug could recur?          → Add regression test
+3. If the rule belongs in the shared standards → suggest the update to the user.
+```
+
+The goal: every mistake makes the system stronger. The same mistake never happens twice.
+
+### Step 6: Report
+
+```
+1. Use the Completion Report format below.
+2. Include ALL verification results and any harness improvements made.
+3. Report once at the end. Do not narrate during implementation.
+```
+
+### Core Rules
+
 - **One feature at a time. Complete and verify before moving to the next.**
-- Small, verifiable steps. Run verification after each meaningful change.
 - Follow existing patterns. Do not introduce your preferred patterns over the project's.
 - **No overengineering. Implement what was asked. No speculative abstractions.**
 
@@ -22,6 +94,36 @@
 - Only 1-2 files need changes
 - You're confident about the implementation approach
 - After completion, report what you did (not during the process)
+
+## Completion Report
+
+After finishing a task, report in this format:
+
+```
+## Done
+
+**What changed:**
+- <file path>: <one-line summary of change>
+
+**Decisions made:**
+- <any non-obvious choice and why>
+
+**Verification:**
+- Tests: ✅ passed (X tests)
+- Lint: ✅ passed
+- Type check: ✅ passed
+- Self-review: ✅ no layer violations, errors wrapped, no hardcoded values
+- Browser check: ✅ screenshot verified (frontend only)
+- curl check: ✅ response shape correct (API only)
+
+**Harness strengthened (if applicable):**
+- <lint rule / structural test / CI check added to prevent recurrence>
+
+**Not done (if any):**
+- <anything intentionally skipped and why>
+```
+
+Do NOT give a running commentary during implementation. Report once at the end.
 
 ## Decision Logging
 
