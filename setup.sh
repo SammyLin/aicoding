@@ -41,8 +41,8 @@ DESCRIPTIONS=(
 TARGET="claude"
 for arg in "$@"; do
   case "$arg" in
-    --kiro)  TARGET="kiro" ;;
-    --all)   TARGET="all" ;;
+    --kiro)   TARGET="kiro" ;;
+    --all)    TARGET="all" ;;
     --claude) TARGET="claude" ;;
   esac
 done
@@ -69,13 +69,14 @@ download_standards() {
 
 # --- Create symbolic links from one directory to another ---
 link_standards() {
-  local source_dir="$1"
-  local target_dir="$2"
+  local source_dir="$1" # .claude/rules
+  local target_dir="$2" # .kiro/steering
   mkdir -p "$target_dir"
   echo "Creating symbolic links in $target_dir/ -> $source_dir/ ..."
   for file in "${DOWNLOADED[@]}"; do
-    local rel_path
-    rel_path="$(realpath --relative-to="$target_dir" "$source_dir/$file")"
+    # 既然專案目錄結構固定，直接手動指定相對路徑回到根目錄
+    # 這是最通用的做法，不依賴 realpath 指令
+    local rel_path="../../$source_dir/$file"
     ln -sf "$rel_path" "$target_dir/$file"
     echo "  ↳ $file -> $rel_path"
   done
