@@ -265,7 +265,7 @@ describe("OrderCard", () => {
 6. Compose page                → src/features/<feature>/FeaturePage.tsx
 7. Add route                   → src/routes.tsx
 8. Run: pnpm run lint && pnpm test
-9. Browser verify              → screenshot at mobile + desktop widths (see harness-engineering.md)
+9. Browser verify              → use agent-browser for screenshot at mobile + desktop widths (see harness-engineering.md)
 ```
 
 ## Frontend Verification Checklist
@@ -274,8 +274,8 @@ Before reporting any frontend task as done:
 
 - [ ] `pnpm run lint` passes
 - [ ] `pnpm test` passes
-- [ ] Browser screenshot taken at desktop width
-- [ ] Browser screenshot taken at mobile width (if responsive)
+- [ ] Browser screenshot taken at desktop width (via agent-browser)
+- [ ] Browser screenshot taken at mobile width via agent-browser (if responsive)
 - [ ] Keyboard navigation works for interactive elements
 - [ ] Loading and error states verified
 - [ ] No console errors or warnings

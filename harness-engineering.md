@@ -91,30 +91,34 @@ Make the running application itself observable and drivable by agents:
 - Include Prometheus + Grafana in the docker-compose stack so agents can query metrics and verify behavior via dashboards (see project-ops.md Observability section).
 - Agents should verify observability instrumentation as part of the implementation: if a new endpoint or service method has no counter/histogram, that's a missing requirement — not an optional extra.
 
-### Frontend Verification with Browser Agent
+### Frontend Verification with agent-browser
 
-For any frontend change, you MUST visually verify the result using a browser automation tool (e.g., Playwright MCP, Puppeteer MCP, or Browserbase).
+For any frontend change, you MUST visually verify the result using [agent-browser](https://github.com/vercel-labs/agent-browser).
+
+agent-browser is a CLI tool that drives Chrome/Chromium via CDP. Install via `npm i -g agent-browser` and run `agent-browser install` to download Chrome. See the [agent-browser SKILL.md](https://github.com/vercel-labs/agent-browser/blob/main/skills/agent-browser/SKILL.md) for full command reference.
 
 **Verification sequence for frontend changes:**
 
 ```
 1. Start the dev server         → docker compose up -d
-2. Open the target page         → browser.navigate("http://localhost:3000/target-page")
-3. Take a screenshot            → browser.screenshot()
-4. Verify the result visually   → confirm the UI matches the expected behavior
-5. If the UI is wrong           → fix the code, repeat from step 2
-6. Take a final screenshot      → attach as evidence in the completion report
+2. Open the target page         → agent-browser open http://localhost:3000/target-page
+3. Wait for page load           → agent-browser wait --load networkidle
+4. Take a snapshot              → agent-browser snapshot -i
+5. Take a screenshot            → agent-browser screenshot
+6. Verify the result visually   → confirm the UI matches the expected behavior
+7. If the UI is wrong           → fix the code, repeat from step 2
+8. Take a final screenshot      → attach as evidence in the completion report
 ```
 
 **What to verify:**
 - Layout renders correctly (no overflow, no missing elements)
-- Interactive states work (hover, click, form submission)
-- Responsive behavior (test at mobile and desktop widths if applicable)
+- Interactive states work (click, form submission via `agent-browser click @ref` / `agent-browser fill @ref "text"`)
+- Responsive behavior (test at mobile and desktop widths: `agent-browser set viewport 375 812` / `agent-browser set viewport 1920 1080`)
 - Error states display correctly (empty states, validation errors, loading states)
 
 **Rules:**
-- Never report a frontend task as "done" without a screenshot verification.
-- If the browser tool is unavailable, inform the user and ask how to verify.
+- Never report a frontend task as "done" without a screenshot verification via agent-browser.
+- If agent-browser is unavailable, inform the user and ask how to verify.
 - Screenshots are evidence. Include them in the completion report or PR description.
 
 ## Custom Linters as Teaching Tools
