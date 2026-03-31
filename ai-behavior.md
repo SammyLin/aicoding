@@ -23,6 +23,30 @@
 - You're confident about the implementation approach
 - After completion, report what you did (not during the process)
 
+## Completion Report
+
+After finishing a task, report in this format:
+
+```
+## Done
+
+**What changed:**
+- <file path>: <one-line summary of change>
+
+**Decisions made:**
+- <any non-obvious choice and why>
+
+**Verification:**
+- Tests: ✅ passed (X tests)
+- Lint: ✅ passed
+- Browser check: ✅ screenshot verified (frontend only)
+
+**Not done (if any):**
+- <anything intentionally skipped and why>
+```
+
+Do NOT give a running commentary during implementation. Report once at the end.
+
 ## Decision Logging
 
 When you make architectural or design choices:

@@ -57,8 +57,33 @@ Make the running application itself observable and drivable by agents:
 
 - Make the app bootable per git worktree so agents can launch isolated instances.
 - Expose logs, metrics, and traces to agents via local observability tools (e.g., LogQL, PromQL).
-- Wire browser automation (e.g., Chrome DevTools Protocol) so agents can validate UI behavior directly.
 - Enable agents to reproduce bugs, validate fixes, and record evidence of resolution.
+
+### Frontend Verification with Browser Agent
+
+For any frontend change, you MUST visually verify the result using a browser automation tool (e.g., Playwright MCP, Puppeteer MCP, or Browserbase).
+
+**Verification sequence for frontend changes:**
+
+```
+1. Start the dev server         → docker compose up -d
+2. Open the target page         → browser.navigate("http://localhost:3000/target-page")
+3. Take a screenshot            → browser.screenshot()
+4. Verify the result visually   → confirm the UI matches the expected behavior
+5. If the UI is wrong           → fix the code, repeat from step 2
+6. Take a final screenshot      → attach as evidence in the completion report
+```
+
+**What to verify:**
+- Layout renders correctly (no overflow, no missing elements)
+- Interactive states work (hover, click, form submission)
+- Responsive behavior (test at mobile and desktop widths if applicable)
+- Error states display correctly (empty states, validation errors, loading states)
+
+**Rules:**
+- Never report a frontend task as "done" without a screenshot verification.
+- If the browser tool is unavailable, inform the user and ask how to verify.
+- Screenshots are evidence. Include them in the completion report or PR description.
 
 ## Custom Linters as Teaching Tools
 
@@ -103,6 +128,23 @@ Build closed-loop systems: trace failures, cluster error patterns, feed correcti
 - Fix the category, not just the instance. Update docs, add a lint rule, or improve the test.
 - When documentation falls short, promote the rule into code (lint rule or structural test).
 - Human taste is fed back into the system continuously: review comments, refactoring PRs, and user-facing bugs are captured as doc updates or encoded directly into tooling.
+
+### How to Give Feedback as an Agent
+
+When you encounter a problem or make a mistake, do not just fix it and move on. Strengthen the harness:
+
+```
+1. Fix the immediate issue.
+2. Ask: "Could a lint rule, test, or doc update prevent this from happening again?"
+3. If yes → implement the prevention in the same PR.
+4. If the fix belongs in the standards → suggest the update to the user.
+```
+
+**Examples:**
+- You forgot to wrap an error → add a custom lint rule that flags unwrapped errors.
+- You imported a repository in a handler → add a structural test for layer violations.
+- You didn't know about a project convention → update docs/ with the missing convention.
+- A test was flaky → fix the root cause (shared state, timing), don't just retry.
 
 ### Continuous Harness Improvement Cycle
 

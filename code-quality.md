@@ -34,13 +34,38 @@ You MUST follow these rules when writing, reviewing, or modifying code.
 
 ## Testing
 
-- Write tests BEFORE implementation (TDD). When asked to implement a feature, generate the test first, then the implementation.
-- After writing or modifying code, run the project's test command. If the test fails, fix the code until tests pass.
-- After tests pass, run lint. Fix any issues before considering the task complete.
-- Minimum coverage: aim for >70% on production code. For MVP, >30% is acceptable.
-- Use the test command documented in the project config. Do not guess.
+Write tests BEFORE implementation (TDD). Follow this exact sequence:
 
-Verification sequence (run after every implementation):
-1. Run tests → make test / pytest / go test ./...
-2. Run linter → make lint / ruff check / golangci-lint run
-3. All must pass before reporting completion
+### Step 1: Write the test
+
+```
+1. Read the existing test files to understand the project's test patterns and conventions.
+2. Write a failing test that describes the expected behavior.
+3. Run the test — confirm it FAILS for the right reason (not a syntax error).
+```
+
+### Step 2: Implement the code
+
+```
+1. Write the minimum code to make the test pass.
+2. Run the test — confirm it PASSES.
+3. Refactor if needed, re-run to confirm still passing.
+```
+
+### Step 3: Verify everything
+
+```
+1. Run full test suite   → make test / pytest / go test ./... / npm test
+2. Run linter            → make lint / ruff check / golangci-lint run / npm run lint
+3. Run type checker      → mypy / tsc --noEmit (if applicable)
+4. All must pass before reporting completion.
+```
+
+### Test Rules
+
+- Minimum coverage: >70% on production code. For MVP, >30% is acceptable.
+- Use the test command documented in the project config. Do not guess.
+- Colocate tests next to source files. Use the project's naming convention (e.g., `_test.go`, `test_*.py`, `*.test.ts`).
+- Mock external dependencies (DB, APIs, file system). Never make real network calls in unit tests.
+- Each test must be independent and idempotent — no shared mutable state between tests.
+- Name tests descriptively: `test_create_order_returns_error_when_inventory_empty`, not `test_order_1`.
