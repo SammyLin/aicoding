@@ -20,26 +20,26 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
                            │
               curl ... setup.sh | bash
                            │
-           ┌───────────────┼───────────────┐
-           │               │               │
-           ▼               ▼               ▼
-    ┌─── Claude Code ───┐  │  ┌───── Kiro ────────┐
-    │                    │  │  │                    │
-    │ CLAUDE.md          │  │  │ .kiro/steering/    │
-    │   (entry file,     │  │  │   standards.md     │
-    │    auto-loaded)    │  │  │   (entry file,     │
-    │                    │  │  │    auto-loaded)     │
-    │ .claude/rules/     │  │  │                    │
-    │   code-quality.md  │  │  │   code-quality.md  │
-    │   architecture.md  │  │  │   architecture.md  │
-    │   security.md      │  │  │   security.md      │
-    │   project-ops.md   │  │  │   project-ops.md   │
-    │   ai-behavior.md   │  │  │   ai-behavior.md   │
-    │   harness-eng...md │  │  │   harness-eng...md │
-    │                    │  │  │                    │
-    │ ALL auto-loaded    │  │  │ ALL auto-loaded    │
-    │ at session start   │  │  │ at session start   │
-    └────────────────────┘  │  └────────────────────┘
+           ┌───────────────┼───────────────────────────┐
+           │               │                           │
+           ▼               ▼                           ▼
+    ┌─── Claude Code ───┐  │  ┌───── Kiro ────────┐  ┌─── Skill ──────────┐
+    │                    │  │  │                    │  │                    │
+    │ CLAUDE.md          │  │  │ .kiro/steering/    │  │ .claude/skills/    │
+    │   (entry file,     │  │  │   standards.md     │  │   aicoding-        │
+    │    auto-loaded)    │  │  │   (entry file,     │  │   standards.md     │
+    │                    │  │  │    auto-loaded)     │  │   (skill entry)    │
+    │ .claude/rules/     │  │  │                    │  │                    │
+    │   code-quality.md  │  │  │   code-quality.md  │  │   code-quality.md  │
+    │   architecture.md  │  │  │   architecture.md  │  │   architecture.md  │
+    │   security.md      │  │  │   security.md      │  │   security.md      │
+    │   project-ops.md   │  │  │   project-ops.md   │  │   project-ops.md   │
+    │   ai-behavior.md   │  │  │   ai-behavior.md   │  │   ai-behavior.md   │
+    │   harness-eng...md │  │  │   harness-eng...md │  │   harness-eng...md │
+    │                    │  │  │                    │  │                    │
+    │ ALL auto-loaded    │  │  │ ALL auto-loaded    │  │ On-demand skills   │
+    │ at session start   │  │  │ at session start   │  │ invoked by agent   │
+    └────────────────────┘  │  └────────────────────┘  └────────────────────┘
                             │
                    ┌────────┴────────┐
                    │   AI Agent      │
@@ -56,6 +56,7 @@ Standardized rules for AI coding agents. Host publicly so any AI agent can read 
 |------|-----------|----------------|---------|
 | Claude Code | `CLAUDE.md` | `.claude/rules/*.md` | All loaded at session start automatically |
 | Kiro | `.kiro/steering/standards.md` | `.kiro/steering/*.md` | All `always` inclusion files loaded automatically |
+| Skill | `.claude/skills/aicoding-standards.md` | `.claude/skills/*.md` | On-demand, invoked as skills by the agent |
 
 The AI agent does NOT need to manually read these files — they are injected into context at session start.
 
@@ -75,13 +76,19 @@ curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | b
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
 ```
 
-### Both (Claude Code + Kiro)
+### Skill (Claude Code skills)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --skill
+```
+
+### All (Claude Code + Kiro + Skill)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
 ```
 
-> **Note:** When using `--all`, rule files are downloaded once to `.claude/rules/` and symbolic links are created in `.kiro/steering/` pointing to them — no duplicate files.
+> **Note:** When using `--all`, rule files are downloaded once to `.claude/rules/` and symbolic links are created in `.kiro/steering/` and `.claude/skills/` pointing to them — no duplicate files.
 
 ## Standards
 
