@@ -1,0 +1,33 @@
+# Cache Optimization
+
+API 會把 context 寫到 breakpoint 為止的內容 cache。Cached tokens 成本 = 10% of base input tokens。
+
+---
+
+## 設計原則
+
+| 原則 | 說明 |
+|------|------|
+| **Static first, dynamic last** | stable content（system prompt, tools）放前面，動態內容放後面 |
+| **Messages for updates** | 要更新時，在尾端加 `<system-reminder>`，不要編輯已 cache 的 prompt |
+| **Don't change models** | 不要在 session 中切換 model，cache 是 model-specific |
+| **Carefully manage tools** | Tools 在 cache prefix 裡，加/減 tool 會 invalidates cache |
+| **Move breakpoints** | 保持 cache 最新，把 breakpoint 移到最新 message |
+
+---
+
+## 為什麼工具數量要穩定？
+
+Tools 在 cache prefix 裡。每一個新增或移除 tool，都會改變 prefix，cache 就失效了。
+
+所以：
+- 不要在 session 中動態新增 tool
+- 想動態 discover 用 **tool search**（append-only，不破壞 cache）
+
+---
+
+## 實務建議
+
+1. **Tool list 要在 design time 確定好**，runtime 盡量不改
+2. **Session 開始時**，一次把需要的 tools 都給出去
+3. **不確定的功能**，用 bash tool 兜底，不另外包 tool
