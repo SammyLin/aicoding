@@ -1,4 +1,4 @@
-# Skills Distribution
+# Skills 分發管理
 
 如何分享和管理 Skills。
 

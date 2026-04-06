@@ -7,10 +7,10 @@
 ### 高頻
 | Skill | 用途 |
 |-------|------|
-| `github` | 看 PR status、CI 結果、建立 issue |
+| `github` | 看 PR status、CI 結果，建立 issue |
 | `weather` | 查天氣 |
 | `coding-agent` | 叫 Claude Code 寫複雜程式 |
-| `cloudflare` | DNS、Tunnel、R2 操作（還在安裝中） |
+| `cloudflare` | DNS、Tunnel、R2 操作 |
 
 ### 中頻
 | Skill | 用途 |

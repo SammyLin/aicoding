@@ -1,4 +1,4 @@
-# Dedicated Tools vs General Bash
+# 專用工具 vs General Bash
 
 ## 比較
 

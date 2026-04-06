@@ -1,4 +1,4 @@
-# Context Management
+# Context 管理
 
 讓 Claude 自己管理自己的 context，不要幫它做太多。
 
@@ -6,15 +6,9 @@
 
 ## 4 種機制
 
-### 1. Skills = Progressive Disclosure
+### 1. Skills = 逐步揭露
 
 YAML frontmatter 是 short description，進入 context。Full content 在需要的時候再去讀。
-
-```yaml
-# SKILL.md
-name: cloudflare
-description: Cloudflare Tunnel/R2/Pages 操作。適用時機：DNS 設定、Tunnel 管理
-```
 
 ### 2. Memory Folder
 

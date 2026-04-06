@@ -1,4 +1,4 @@
-# Skills 101
+# Skills 基礎
 
 Skills 是什麼？
 
@@ -30,7 +30,7 @@ Claude 啟動時，會 scan 所有 skill descriptions，決定「這個需求該
 
 ---
 
-## Progressive Disclosure
+## 逐步揭露
 
 1. 最前面：YAML frontmatter（幾行）
 2. 需要時：讀 SKILL.md 完整內容

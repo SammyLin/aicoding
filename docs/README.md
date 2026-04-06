@@ -8,8 +8,8 @@
 
 | 文章 | 說明 |
 |------|------|
-| [progressive-disclosure.md](progressive-disclosure.md) | 什麼是 progressive disclosure — 不要一次全部塞給 AI |
-| [what-can-i-stop-doing.md](what-can-i-stop-doing.md) | 定期問「可以停掉什麼」— Model 變強，過去的 workaround 要刪掉 |
+| [逐步揭露.md](逐步揭露.md) | 不要一次全部塞給 AI，需要的時候再揭露 |
+| [我可以停掉什麼.md](我可以停掉什麼.md) | Model 變強，過去的 workaround 要定期檢視 |
 
 ---
 
@@ -17,10 +17,10 @@
 
 | 文章 | 說明 |
 |------|------|
-| [agent-harness-fundamentals.md](agent-harness-fundamentals.md) | 搭 agent 系統的三大原則 |
-| [cache-optimization.md](cache-optimization.md) | API Prompt Caching — static first, dynamic last |
-| [dedicated-tools-vs-bash.md](dedicated-tools-vs-bash.md) | 什麼該用 dedicated tool，什麼用 bash 就好 |
-| [context-management.md](context-management.md) | Skills、memory folder、subagents、compaction |
+| [agent-harness-基本原則.md](agent-harness-基本原則.md) | 搭 agent 系統的三大原則 |
+| [快取優化.md](快取優化.md) | API Prompt Caching — static first, dynamic last |
+| [專用工具vs-bash.md](專用工具vs-bash.md) | 什麼該用 dedicated tool，什麼用 bash 就好 |
+| [context管理.md](context管理.md) | Skills、memory folder、subagents、compaction |
 
 ---
 
@@ -28,10 +28,10 @@
 
 | 文章 | 說明 |
 |------|------|
-| [skills-101.md](skills-101.md) | Skills 是什麼 — 不是 just markdown，是整個資料夾 |
-| [9-types-of-skills.md](9-types-of-skills.md) | 9 種 Skills 類型 |
-| [writing-good-skills.md](writing-good-skills.md) | 寫 Skills 的技巧 — gotchas 最重要 |
-| [skills-distribution.md](skills-distribution.md) | 如何分享和管理 Skills |
+| [skills-基礎.md](skills-基礎.md) | Skills 是什麼 — 不是 just markdown，是整個資料夾 |
+| [9種skills類型.md](9種skills類型.md) | 9 種 Skills 類型 |
+| [寫好skills技巧.md](寫好skills技巧.md) | 寫 Skills 的技巧 — gotchas 最重要 |
+| [skills分發管理.md](skills分發管理.md) | 如何分享和管理 Skills |
 
 ---
 
@@ -39,7 +39,7 @@
 
 | 文章 | 說明 |
 |------|------|
-| [openclaw-skills.md](openclaw-skills.md) | OpenClaw 的 Skills 實作經驗 |
+| [openclaw-skills實作經驗.md](openclaw-skills實作經驗.md) | 小六的 Skills 實作經驗 |
 
 ---
 

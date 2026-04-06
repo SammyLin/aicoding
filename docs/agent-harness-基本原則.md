@@ -1,12 +1,12 @@
-# Agent Harness Fundamentals
+# Agent Harness 基本原則
 
 搭 agent 系統的三大原則。
 
-**Source**: [Anthropic Blog - Harnessing Claude's Intelligence](https://claude.com/blog/harnessing-claudes-intelligence)
+**來源**: [Anthropic Blog - Harnessing Claude's Intelligence](https://claude.com/blog/harnessing-claudes-intelligence)
 
 ---
 
-## 原則 1： 用 Claude 擅長的工具
+## 原則 1：用 Claude 擅長的工具
 
 Claude 最強的是：
 - **Bash** — 幾乎所有操作都可以用

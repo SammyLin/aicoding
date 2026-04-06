@@ -1,4 +1,4 @@
-# Writing Good Skills
+# 寫好 Skills 的技巧
 
 ## 最高價值：Gotchas Section
 
