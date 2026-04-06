@@ -32,6 +32,7 @@
 | [9種skills類型.md](9種skills類型.md) | 9 種 Skills 類型 |
 | [寫好skills技巧.md](寫好skills技巧.md) | 寫 Skills 的技巧 — gotchas 最重要 |
 | [skills分發管理.md](skills分發管理.md) | 如何分享和管理 Skills |
+| [skills-patterns原文.md](skills-patterns原文.md) | Anthropic 官方 Skills Patterns 文章 — 完整原文重點 |
 
 ---
 
