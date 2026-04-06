@@ -274,3 +274,111 @@ Escalate to humans only when judgment is required. Push review effort toward age
 | Giant context dumps to agent | Progressive disclosure with pointers |
 | Hope agents follow conventions | Enforce conventions mechanically |
 | Same mistake happens twice | Every mistake becomes a permanent guardrail |
+
+---
+
+## Agent Harness Fundamentals
+
+*Source: [Anthropic Blog - Harnessing Claude's Intelligence](https://claude.com/blog/harnessing-claudes-intelligence)*
+
+### Three Core Principles
+
+#### 1. Use What Claude Knows
+Claude is strong with general-purpose tools: bash and text editor. SWE-bench 49% was achieved with just these two. Skills, programmatic tool calling, and memory are all compositions of bash + text editor.
+
+**Practical**: Don't invent new tools. Use what Claude already knows well.
+
+#### 2. Ask "What Can I Stop Doing?"
+Agent harnesses encode assumptions about what Claude can't do. As Claude gets stronger, those assumptions become stale.
+
+Give Claude a **code execution tool** — it lets Claude decide what tool results to pipe into the next call, instead of everything landing in context. The orchestration decision moves from the harness to the model.
+
+**Practical**: Don't dump all tool results back to Claude. Let it choose what matters.
+
+#### 3. Let Claude Orchestrate Its Own Context
+
+- **Skills = Progressive Disclosure**: YAML frontmatter as short description in context; full content read only when needed. Don't pre-load rarely-used instructions.
+- **Memory folder**: Let Claude write context to files, then read as needed. Sonnet 3.5 treated memory as transcript (wrong). Opus 4.5+ writes tactical notes.
+- **Subagents**: Fork a fresh context window for isolated work. Opus 4.6 + subagents → +2.8% on BrowseComp.
+- **Compaction**: Summarize past context to maintain continuity on long-horizon tasks. Sonnet 4.5 flatlined at 43% regardless of budget. Opus 4.6 scaled to 84%.
+
+**Practical**: Give Claude tools to manage its own context — don't do it for it.
+
+### Cache Optimization
+
+API caches context up to breakpoints. Cached tokens cost 10% of base input tokens.
+
+| Principle | Description |
+|-----------|-------------|
+| Static first, dynamic last | Stable content (system prompt, tools) first, dynamic content last |
+| Messages for updates | Append `<system-reminder>` instead of editing the cached prompt |
+| Don't change models | Caches are model-specific; switching breaks them |
+| Carefully manage tools | Tools sit in cached prefix — adding/removing one invalidates cache |
+| Move breakpoints | Keep cache up-to-date by moving breakpoint to latest message |
+
+### Dedicated Tools vs General Bash
+
+- **Bash tool**: Broad capability, but harness only gets a command string — same shape for every action.
+- **Dedicated tool**: Typed arguments, harness can intercept, gate, render, or audit.
+- **When to promote**: Security boundaries, irreversible actions, user-facing actions, observability.
+
+**Practical**: Actions requiring security confirmation or irreversible operations → dedicated tool. Regular scripting → bash.
+
+---
+
+## Skills Architecture
+
+*Source: [Anthropic Blog - Skills Patterns](https://claude.com/blog/skills-patterns)*
+
+### Skills Are Folders, Not Just Markdown
+
+The most interesting part of skills: they're not just text files. They're folders that can include scripts, assets, data, etc. that the agent can discover, explore, and manipulate.
+
+### 9 Types of Skills
+
+| # | Type | Purpose | Examples |
+|---|------|---------|----------|
+| 1 | **Library & API Reference** | How to correctly use a library, CLI, or SDK | billing-lib, internal-platform-cli |
+| 2 | **Product Verification** | Test and verify code works | signup-flow-driver, checkout-verifier |
+| 3 | **Data Fetching & Analysis** | Connect to data and monitoring stacks | funnel-query, cohort-compare, grafana |
+| 4 | **Business Process** | Automate repetitive workflows into one command | standup-post, weekly-recap |
+| 5 | **Code Scaffolding** | Generate framework boilerplate | new-migration, create-app |
+| 6 | **Code Quality & Review** | Enforce code quality and review | adversarial-review, code-style |
+| 7 | **CI/CD & Deployment** | Help fetch, push, and deploy code | babysit-pr, cherry-pick-prod |
+| 8 | **Runbooks** | Symptom → multi-tool investigation → report | \<service\>-debugging, log-correlator |
+| 9 | **Infrastructure Ops** | Routine maintenance and operational procedures | \<resource\>-orphans, cost-investigation |
+
+### Tips for Writing Skills
+
+1. **Don't state the obvious** — Focus on what pushes Claude out of its normal way of thinking. Don't repeat what Claude already knows.
+2. **Build a Gotchas Section** — Highest-signal content. Capture common failure points from experience. Update over time.
+3. **Use the File System & Progressive Disclosure** — Split detailed content into `references/api.md`. Point to template files in `assets/`. Claude will read them at appropriate times.
+4. **Avoid Railroading Claude** — Give Claude the information it needs, but the flexibility to adapt. It will generally try to stick to your instructions — be careful being too specific.
+5. **Think Through Setup** — Some skills need initial config (e.g., "which Slack channel?"). Store in `config.json`. If not set, the agent asks the user.
+6. **Description Field Is For the Model** — Not a title, but a description of **when to trigger this skill**. Claude scans all skill descriptions to decide "is there a skill for this request?"
+7. **Memory & Storing Data** — Skills can store data in append-only logs, JSON files, or SQLite. Use `${CLAUDE_PLUGIN_DATA}` for stable per-plugin storage.
+8. **Store Scripts & Generate Code** — Give Claude scripts and libraries so it spends turns on composition, not reconstructing boilerplate.
+
+### On-Demand Hooks
+
+Hooks that activate only when the skill is called, lasting for the session duration. For opinionated guardrails you don't want always-on:
+
+```
+/careful — blocks rm -rf, DROP TABLE, force-push, kubectl delete
+/freeze — blocks any Edit/Write outside a specific directory
+```
+
+### Measuring Skills
+
+Use a `PreToolUse` hook to log skill usage. Find skills that are popular or are under-triggering compared to expectations.
+
+### Distributing Skills
+
+- **Small teams**: Check skills into repo (under `.claude/skills`)
+- **Scaling**: Internal plugin marketplace. Upload to sandbox → get traction → PR to move to marketplace.
+
+**Curation tip**: Easy to create bad or redundant skills. Have a review step before release.
+
+---
+
+*Last updated: 2026-04-06*
