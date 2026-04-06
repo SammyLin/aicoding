@@ -17,6 +17,7 @@
 
 | 文章 | 說明 |
 |------|------|
+| [harnessing-claudes-intelligence原文.md](harnessing-claudes-intelligence原文.md) | **Anthropic 官方原文重點** — 三大原則、Cache、Context、Tools |
 | [agent-harness-基本原則.md](agent-harness-基本原則.md) | 搭 agent 系統的三大原則 |
 | [快取優化.md](快取優化.md) | API Prompt Caching — static first, dynamic last |
 | [專用工具vs-bash.md](專用工具vs-bash.md) | 什麼該用 dedicated tool，什麼用 bash 就好 |
