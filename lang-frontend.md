@@ -116,6 +116,35 @@ export function OrderCard({ order, onSelect }: OrderCardProps) {
 - Destructure props in function signature.
 - Co-locate styles, tests, and sub-components with their parent.
 
+### Shared UI Patterns
+
+When the same UI pattern appears in 2+ features, extract it into `shared/components/` **before** using it — do not copy-paste across pages.
+
+```
+1. Identify duplication   → Same layout, interaction, or visual pattern in multiple features.
+2. Extract to shared      → Move to src/features/shared/components/<ComponentName>.tsx
+3. Define a clean API     → Props interface with only the data/callbacks the component needs.
+4. Replace inline usages  → Import from shared in every feature that was duplicating the pattern.
+5. Test once in shared    → One test suite in shared/components/<ComponentName>.test.tsx.
+```
+
+Common candidates for extraction:
+
+| Pattern | Location | Example |
+|---------|----------|---------|
+| Page header with breadcrumb | `shared/components/PageHeader.tsx` | Title, subtitle, back link |
+| Empty state placeholder | `shared/components/EmptyState.tsx` | Icon, message, CTA button |
+| Confirmation dialog | `shared/components/ConfirmDialog.tsx` | Title, body, confirm/cancel actions |
+| Data table with sorting | `shared/components/DataTable.tsx` | Columns config, rows, sort state |
+| Status badge | `shared/components/StatusBadge.tsx` | Variant-based color and label |
+| Loading / error wrapper | `shared/components/AsyncBoundary.tsx` | Loading spinner, error message, retry |
+
+Rules:
+- Extract **proactively** when adding a second usage — do not wait until the pattern spreads further.
+- Shared components must be **feature-agnostic**. If it needs feature-specific logic, it does not belong in shared.
+- Use composition (`children`, render props, slots) to keep shared components flexible without prop bloat.
+- Re-export shared components from `shared/index.ts` so consumers import from one barrel file.
+
 ## State Management
 
 ```
