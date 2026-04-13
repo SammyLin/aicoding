@@ -192,12 +192,28 @@ make_kiro_agent() {
   local desc_json
   desc_json=$(printf '%s' "$description" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
+  # code-reviewer is read-only (審查不改碼) + limited to git-read commands.
+  # Other agents added later may need broader tools — this currently assumes
+  # the single agent we ship matches this profile.
   cat > "$dest" <<EOF
 {
   "name": "$name",
   "description": "$desc_json",
-  "tools": ["fs_read", "fs_write", "execute_bash"],
+  "tools": ["fs_read", "execute_bash"],
   "allowedTools": ["fs_read"],
+  "toolsSettings": {
+    "execute_bash": {
+      "allowedCommands": [
+        "git diff",
+        "git diff --cached",
+        "git diff HEAD",
+        "git status",
+        "git status --short",
+        "git log",
+        "git show"
+      ]
+    }
+  },
   "prompt": "$prompt_json"
 }
 EOF
@@ -351,19 +367,56 @@ install_settings_json() {
   local target=".claude/settings.json"
   local tmp
   tmp=$(mktemp)
-  if curl -fsSL "$BASE_URL/$SETTINGS_SOURCE" -o "$tmp" 2>/dev/null; then
-    if [ -f "$target" ]; then
-      # Existing settings.json — install as .aicoding.json sidecar for user to merge
-      cp "$tmp" ".claude/settings.aicoding.json"
-      echo "  ! .claude/settings.json already exists"
-      echo "    aicoding's recommended config installed as .claude/settings.aicoding.json"
-      echo "    Diff and merge manually, or delete existing and re-run to replace."
-    else
-      cp "$tmp" "$target"
-      echo "  ✓ settings.json (team-standard permissions + hooks wired up)"
+  if ! curl -fsSL "$BASE_URL/$SETTINGS_SOURCE" -o "$tmp" 2>/dev/null; then
+    echo "  ✗ settings.json (not found on remote)"
+    rm -f "$tmp"
+    return
+  fi
+
+  if [ ! -f "$target" ]; then
+    # Fresh install — drop it in.
+    cp "$tmp" "$target"
+    echo "  ✓ settings.json (team-standard permissions + hooks wired up)"
+    rm -f "$tmp"
+    return
+  fi
+
+  # Existing settings.json. If identical to new, nothing to do.
+  if cmp -s "$tmp" "$target"; then
+    echo "  ✓ settings.json (already up to date)"
+    rm -f "$tmp"
+    return
+  fi
+
+  # Otherwise, install as sidecar and surface a concise diff so the user
+  # knows exactly what changed without having to hunt for it.
+  local sidecar=".claude/settings.aicoding.json"
+  cp "$tmp" "$sidecar"
+  echo "  ! .claude/settings.json differs from team standard"
+  echo "    Team version installed as .claude/settings.aicoding.json"
+
+  if command -v diff >/dev/null 2>&1; then
+    # Temporarily disable pipefail: `head -N` SIGPIPEs upstream which would
+    # otherwise break the pipeline under `set -eo pipefail`.
+    set +o pipefail
+    local summary
+    summary=$(diff -u "$target" "$sidecar" 2>/dev/null \
+      | grep -E '^[+-]' \
+      | grep -vE '^(\+\+\+|---)' \
+      | head -20)
+    set -o pipefail
+    if [ -n "$summary" ]; then
+      echo ""
+      echo "    Summary of changes (first 20 lines):"
+      echo "    ─────────────────────────────────────"
+      printf '%s\n' "$summary" | sed 's/^/      /'
+      echo "    ─────────────────────────────────────"
+      echo ""
+      echo "    Full diff:  diff -u .claude/settings.json .claude/settings.aicoding.json"
+      echo "    Accept:     mv .claude/settings.aicoding.json .claude/settings.json"
     fi
   else
-    echo "  ✗ settings.json (not found on remote)"
+    echo "    Compare manually: diff -u .claude/settings.json $sidecar"
   fi
   rm -f "$tmp"
 }

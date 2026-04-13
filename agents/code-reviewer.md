@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: 審查目前未提交的所有變更（staged + unstaged），對照核心規則（code-quality、architecture、security）給出結構化報告。適用場景：準備 commit 前的最後把關，或收到一大段 diff 需要獨立視角檢查。只審查不改碼。
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash(git diff:*), Bash(git status:*), Bash(git log:*), Bash(git show:*)
 model: sonnet
 ---
 

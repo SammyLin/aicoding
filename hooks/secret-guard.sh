@@ -15,21 +15,40 @@ CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 [ -z "$CMD" ] && exit 0
 
 # Patterns to block. Each is a POSIX extended regex.
-# Tuned to catch accidental exposure, not be an exhaustive DLP scanner.
+# Tuned to minimize false negatives — we'd rather block a legitimate edge case
+# (user can edit this file to whitelist) than leak a secret.
+#
+# Prefer substring matches without whitespace boundaries so that path-embedded
+# references (e.g. `cat ~/.ssh/id_rsa`) are still caught.
 declare -a PATTERNS=(
-  '\.env($|[^[:alnum:]._-])'     # .env, .env.local, etc. (but not .envoy)
-  '(^|[[:space:]])id_rsa($|[[:space:]])'
-  '(^|[[:space:]])id_ed25519($|[[:space:]])'
-  '(^|[[:space:]])\.ssh/'
+  # .env files — any extension or dot-suffix variant (.env, .env.local, .env-prod, .env_staging)
+  # followed by non-alphanumeric so we don't catch words like ".envoy" or ".envelope"
+  '\.env([^[:alnum:]]|$)'
+
+  # Common SSH/auth key filenames — catch them anywhere (path-embedded is common)
+  'id_rsa([^[:alnum:]]|$)'
+  'id_ed25519([^[:alnum:]]|$)'
+  'id_ecdsa([^[:alnum:]]|$)'
+  '\.ssh/'
+
+  # Inline secret material
   'AWS_SECRET_ACCESS_KEY'
+  'AWS_SESSION_TOKEN'
   'PRIVATE[_-]KEY'
   '-----BEGIN [A-Z ]*PRIVATE KEY-----'
-  'rm[[:space:]]+-rf[[:space:]]+/($|[[:space:]])'   # rm -rf /
-  'rm[[:space:]]+-rf[[:space:]]+~($|/)'             # rm -rf ~
-  'curl[^|]*\|[[:space:]]*(sh|bash)([[:space:]]|$)'
-  'wget[^|]*\|[[:space:]]*(sh|bash)([[:space:]]|$)'
+
+  # Catastrophic deletes
+  'rm[[:space:]]+-rf?[[:space:]]+/($|[[:space:]])'    # rm -rf / or rm -r /
+  'rm[[:space:]]+-rf?[[:space:]]+~($|/)'              # rm -rf ~ or rm -rf ~/
+  'rm[[:space:]]+-rf?[[:space:]]+\$HOME($|/)'         # rm -rf $HOME
+
+  # Pipe-to-shell supply-chain patterns
+  'curl[^|]*\|[[:space:]]*(sh|bash|zsh)([[:space:]]|$)'
+  'wget[^|]*\|[[:space:]]*(sh|bash|zsh)([[:space:]]|$)'
+
+  # Force-push: rewrites shared history
   'git[[:space:]]+push[[:space:]].*--force'
-  'git[[:space:]]+push[[:space:]]+-f([[:space:]]|$)'
+  'git[[:space:]]+push[[:space:]]+-f($|[[:space:]])'
 )
 
 for p in "${PATTERNS[@]}"; do
