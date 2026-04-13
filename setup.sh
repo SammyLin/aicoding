@@ -66,7 +66,7 @@ COMMAND_FILES=( "commands/commit.md" "commands/review.md" )
 
 # ── Layer 5: Hooks + Settings (Claude Code only) ──
 HOOK_FILES=( "hooks/auto-format.sh" "hooks/secret-guard.sh" )
-SETTINGS_SOURCE="settings.example.json"
+SETTINGS_SOURCE="settings.json"
 
 # --- Parse args ---
 TARGET="claude"
@@ -363,7 +363,7 @@ install_settings_json() {
       echo "  ✓ settings.json (team-standard permissions + hooks wired up)"
     fi
   else
-    echo "  ✗ settings.example.json (not found on remote)"
+    echo "  ✗ settings.json (not found on remote)"
   fi
   rm -f "$tmp"
 }

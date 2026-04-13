@@ -144,7 +144,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 |------|------|-------|
 | [hooks/auto-format.sh](hooks/auto-format.sh) | `PostToolUse` Edit/Write | 依副檔名跑 gofmt / ruff / prettier（失敗不擋） |
 | [hooks/secret-guard.sh](hooks/secret-guard.sh) | `PreToolUse` Bash | 擋 `.env`、`rm -rf`、`curl \| sh`、SSH key |
-| [settings.example.json](settings.example.json) | — | 團隊預設權限 + hooks 掛載 |
+| [settings.json](settings.json) | — | 團隊預設權限 + hooks 掛載（裝成 `.claude/settings.json`） |
 
 ## 更新
 

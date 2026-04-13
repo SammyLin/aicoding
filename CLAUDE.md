@@ -30,7 +30,7 @@ Agent + Commands（支撐 Verify / Commit 流程）：
 Hooks + Settings（自動化與權限）：
   hooks/auto-format.sh       → .claude/hooks/auto-format.sh
   hooks/secret-guard.sh      → .claude/hooks/secret-guard.sh
-  settings.example.json      → .claude/settings.json
+  settings.json              → .claude/settings.json
 
 其他：
   setup.sh                   — 安裝器（偵測語言、轉換 Kiro 格式）
