@@ -101,7 +101,7 @@ detect_languages() {
       detected+=("$i")
     fi
   done
-  echo "${detected[@]}"
+  echo "${detected[@]+"${detected[@]}"}"
 }
 
 # --- Wrap raw rule content into a SKILL.md with frontmatter ---
@@ -135,7 +135,10 @@ generate_claude() {
   echo ""
   echo "Layer 2 — Detecting project languages..."
   local detected
-  detected=($(detect_languages))
+  local _det
+  _det=$(detect_languages)
+  local detected=()
+  [ -n "$_det" ] && read -ra detected <<< "$_det"
 
   if [ ${#detected[@]} -eq 0 ]; then
     echo "  No languages detected. Installing all language rules."
@@ -195,7 +198,10 @@ ENTRY
 
   # List detected language rules
   local detected
-  detected=($(detect_languages))
+  local _det
+  _det=$(detect_languages)
+  local detected=()
+  [ -n "$_det" ] && read -ra detected <<< "$_det"
   if [ ${#detected[@]} -gt 0 ]; then
     for i in "${detected[@]}"; do
       echo "- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}" >> "$claude_md"
@@ -246,7 +252,10 @@ generate_kiro() {
     done
     echo "Language rules..."
     local detected
-    detected=($(detect_languages))
+    local _det
+  _det=$(detect_languages)
+  local detected=()
+  [ -n "$_det" ] && read -ra detected <<< "$_det"
     if [ ${#detected[@]} -eq 0 ]; then
       for i in "${!LANG_FILES[@]}"; do
         download_file "$BASE_URL/${LANG_FILES[$i]}" "$steering_dir/${LANG_FILES[$i]}"
