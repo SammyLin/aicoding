@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# AI Development Standards Setup
+# AI Development Standards — Progressive Disclosure
+#
+# 3 layers:
+#   1. Core rules (always loaded) — every task needs these
+#   2. Language rules (auto-detected) — only install what the project uses
+#   3. Skills (agent-invoked) — loaded when Claude decides it's relevant
+#
 # Usage:
 #   Claude Code: curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
 #   Kiro:        curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
@@ -11,32 +17,38 @@ BASE_URL="https://raw.githubusercontent.com/SammyLin/aicoding/main"
 SOURCE="https://github.com/SammyLin/aicoding"
 INSTALLED_AT="$(date +%Y-%m-%d)"
 
-FILES=(
+# ── Layer 1: Core rules (always loaded, no paths) ──
+CORE_FILES=(
+  "ai-behavior.md"
   "code-quality.md"
   "architecture.md"
-  "security.md"
-  "project-ops.md"
-  "ai-behavior.md"
-  "harness-engineering.md"
-  "lang-node.md"
-  "lang-python.md"
-  "lang-go.md"
-  "lang-frontend.md"
-  "agent-browser-skill.md"
+)
+CORE_DESCRIPTIONS=(
+  "AI agent 5-step flow, commit frequency, completion report"
+  "Code quality, TDD, error handling, typing"
+  "Layered architecture, DI, module boundaries"
 )
 
-DESCRIPTIONS=(
-  "Code quality, testing, error handling, typing"
-  "Layered architecture, DI, module boundaries"
-  "Secrets, input validation, MCP/Serena server rules"
-  "Project structure, Docker, git, commit frequency, Prometheus/Grafana observability"
-  "AI agent behavior, commit frequency, MCP/Serena usage, observability awareness"
-  "Harness engineering: docs structure, guardrails, feedback loops"
-  "Node/TypeScript: pnpm, ESLint, Prettier, Zod, vitest"
-  "Python: uv, ruff, FastAPI, Pydantic, pytest"
-  "Go: go mod, golangci-lint, constructor DI, table-driven tests"
-  "Frontend: React, component design, state management, a11y, testing-library"
-  "agent-browser CLI reference for frontend browser verification"
+# ── Layer 2: Language rules (auto-detected per project) ──
+LANG_FILES=(    "lang-node.md"    "lang-python.md"  "lang-go.md"      "lang-frontend.md")
+LANG_DETECT=(   "package.json"    "pyproject.toml"   "go.mod"          "__frontend__")
+LANG_LABELS=(   "Node/TypeScript" "Python"           "Go"              "Frontend (React)")
+LANG_DESCRIPTIONS=(
+  "pnpm, ESLint, Prettier, Zod, vitest"
+  "uv, ruff, FastAPI, Pydantic, pytest"
+  "go mod, golangci-lint, constructor DI, table-driven tests"
+  "React, component design, state management, a11y"
+)
+
+# ── Layer 3: Skills (agent decides when to load) ──
+# Skills are directories with SKILL.md inside
+SKILL_NAMES=(   "security-check"    "infra-ops"           "harness-review"              "browser-verify")
+SKILL_SOURCES=( "security.md"       "project-ops.md"      "harness-engineering.md"      "agent-browser-skill.md")
+SKILL_DESCRIPTIONS=(
+  "10-item security checklist. Use before adding API endpoints, shipping code, or handling user input. Covers secrets, SQL injection, XSS, auth, HTTPS."
+  "Docker, git workflow, CI/CD, observability standards. Use when setting up infrastructure, writing Dockerfiles, or configuring deployment."
+  "Guardrails and feedback loops. Use when a mistake recurs, when fixing systemic issues, or when strengthening the development harness."
+  "agent-browser CLI for frontend verification. Use when you need to visually verify frontend changes in a real browser."
 )
 
 # --- Parse args ---
@@ -49,121 +61,205 @@ for arg in "$@"; do
   esac
 done
 
-# Track which files were successfully downloaded
-DOWNLOADED=()
+# --- Download a single file ---
+download_file() {
+  local url="$1" dest="$2"
+  mkdir -p "$(dirname "$dest")"
+  if curl -fsSL "$url" -o "$dest" 2>/dev/null; then
+    echo "  ✓ $(basename "$dest")"
+    return 0
+  else
+    echo "  ✗ $(basename "$dest") (not found)"
+    rm -f "$dest"
+    return 1
+  fi
+}
 
-# --- Download standards into a target directory ---
-download_standards() {
-  local dir="$1"
-  mkdir -p "$dir"
-  DOWNLOADED=()
-  echo "Downloading standards to $dir/ ..."
-  for file in "${FILES[@]}"; do
-    if curl -fsSL "$BASE_URL/$file" -o "$dir/$file" 2>/dev/null; then
-      echo "  ✓ $file"
-      DOWNLOADED+=("$file")
-    else
-      echo "  ✗ $file (not found, skipping)"
-      rm -f "$dir/$file"
+# --- Detect project languages ---
+detect_languages() {
+  local detected=()
+  for i in "${!LANG_FILES[@]}"; do
+    local marker="${LANG_DETECT[$i]}"
+    local found=false
+
+    if [ "$marker" = "__frontend__" ]; then
+      # Frontend: check for .tsx files, vite/next config, or React in package.json
+      if find . -name '*.tsx' -maxdepth 4 2>/dev/null | head -1 | grep -q .; then
+        found=true
+      elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ] || [ -f "next.config.js" ] || [ -f "next.config.ts" ]; then
+        found=true
+      elif [ -f "package.json" ] && grep -q '"react"' package.json 2>/dev/null; then
+        found=true
+      fi
+    elif [ -f "$marker" ]; then
+      found=true
+    elif [ "$marker" = "pyproject.toml" ] && [ -f "requirements.txt" ]; then
+      found=true
+    fi
+
+    if [ "$found" = true ]; then
+      detected+=("$i")
     fi
   done
+  echo "${detected[@]}"
 }
 
-# --- Create symbolic links from one directory to another ---
-link_standards() {
-  local source_dir="$1" # .claude/rules
-  local target_dir="$2" # .kiro/steering
-  mkdir -p "$target_dir"
-  echo "Creating symbolic links in $target_dir/ -> $source_dir/ ..."
-  for file in "${DOWNLOADED[@]}"; do
-    # 既然專案目錄結構固定，直接手動指定相對路徑回到根目錄
-    # 這是最通用的做法，不依賴 realpath 指令
-    local rel_path="../../$source_dir/$file"
-    ln -sf "$rel_path" "$target_dir/$file"
-    echo "  ↳ $file -> $rel_path"
+# --- Wrap raw rule content into a SKILL.md with frontmatter ---
+make_skill() {
+  local name="$1" description="$2" source_content="$3" dest="$4"
+  mkdir -p "$(dirname "$dest")"
+  {
+    echo "---"
+    echo "name: $name"
+    echo "description: \"$description\""
+    echo "---"
+    echo ""
+    echo "$source_content"
+  } > "$dest"
+}
+
+# ============================================================
+# Generate for Claude Code
+# ============================================================
+generate_claude() {
+  local rules_dir=".claude/rules"
+  local skills_dir=".claude/skills"
+
+  # Layer 1: Core rules
+  echo "Layer 1 — Core rules (always loaded):"
+  for file in "${CORE_FILES[@]}"; do
+    download_file "$BASE_URL/$file" "$rules_dir/$file"
   done
+
+  # Layer 2: Auto-detect languages
+  echo ""
+  echo "Layer 2 — Detecting project languages..."
+  local detected
+  detected=($(detect_languages))
+
+  if [ ${#detected[@]} -eq 0 ]; then
+    echo "  No languages detected. Installing all language rules."
+    for i in "${!LANG_FILES[@]}"; do
+      download_file "$BASE_URL/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
+    done
+  else
+    for i in "${detected[@]}"; do
+      echo "  Detected: ${LANG_LABELS[$i]}"
+      download_file "$BASE_URL/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
+    done
+  fi
+
+  # Layer 3: Skills (download source, wrap as SKILL.md)
+  echo ""
+  echo "Layer 3 — Skills (agent-invoked, on-demand):"
+  for i in "${!SKILL_NAMES[@]}"; do
+    local tmp_file
+    tmp_file=$(mktemp)
+    if curl -fsSL "$BASE_URL/${SKILL_SOURCES[$i]}" -o "$tmp_file" 2>/dev/null; then
+      local content
+      content=$(cat "$tmp_file")
+      make_skill "${SKILL_NAMES[$i]}" "${SKILL_DESCRIPTIONS[$i]}" "$content" \
+        "$skills_dir/${SKILL_NAMES[$i]}/SKILL.md"
+      echo "  ✓ ${SKILL_NAMES[$i]}/"
+    else
+      echo "  ✗ ${SKILL_NAMES[$i]} (source not found)"
+    fi
+    rm -f "$tmp_file"
+  done
+
+  # Generate CLAUDE.md
+  echo ""
+  generate_claude_md
 }
 
-# --- Generate CLAUDE.md entry file ---
 generate_claude_md() {
   local claude_md="CLAUDE.md"
-  local rules_dir=".claude/rules"
-
-  download_standards "$rules_dir"
 
   cat > "$claude_md" << ENTRY
 # aicoding standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
-ENTRY
-
-  cat >> "$claude_md" << 'ENTRY'
-
-## MCP: Serena
-
-- Always use Serena MCP tools for codebase navigation and symbol lookup before falling back to file reading.
-- Run `activate_project` + `check_onboarding_performed` at the start of each session if Serena is available.
-- Use Serena's semantic understanding (symbol lookup, references, type hierarchy) instead of relying solely on text search.
-- If Serena is not available, fall back to standard file reading and search tools.
 
 ## Core Philosophy
 
 One feature at a time. Verify before moving on. No overengineering.
 
-## Standards (auto-loaded from .claude/rules/)
+## How Rules Are Organized
 
-The following rules are automatically loaded into your context at session start.
-You do NOT need to read them manually — they are already available to you.
+**Layer 1 — Always loaded (\`.claude/rules/\`):**
+ENTRY
+
+  for i in "${!CORE_FILES[@]}"; do
+    echo "- **${CORE_FILES[$i]%.md}**: ${CORE_DESCRIPTIONS[$i]}" >> "$claude_md"
+  done
+
+  # List detected language rules
+  local detected
+  detected=($(detect_languages))
+  if [ ${#detected[@]} -gt 0 ]; then
+    for i in "${detected[@]}"; do
+      echo "- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}" >> "$claude_md"
+    done
+  else
+    for i in "${!LANG_FILES[@]}"; do
+      echo "- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}" >> "$claude_md"
+    done
+  fi
+
+  cat >> "$claude_md" << 'ENTRY'
+
+**Layer 2 — Skills (Claude auto-invokes when relevant):**
+
+Skills are NOT pre-loaded. Claude sees their descriptions and decides when to read the full content.
 
 ENTRY
 
-  for i in "${!FILES[@]}"; do
-    for d in "${DOWNLOADED[@]}"; do
-      if [ "$d" = "${FILES[$i]}" ]; then
-        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}" >> "$claude_md"
-        break
-      fi
-    done
+  for i in "${!SKILL_NAMES[@]}"; do
+    echo "- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}" >> "$claude_md"
   done
 
   cat >> "$claude_md" << 'ENTRY'
 
-## When to Apply Which Rules
+## Task Flow
 
-| Task | Primary Rules | Key Actions |
-|------|--------------|-------------|
-| **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
-| **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
-| **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
-| **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
-| **Frontend changes** | lang-frontend, harness-engineering, code-quality | Feature-based structure, component design, a11y, browser screenshot verification |
-| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
-| **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
-| **Security review** | security | Run 10-item security checklist before completion |
-| **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
-| **Write tests** | code-quality | TDD steps, mock externals, descriptive names, run in Docker |
-| **Docker / infra** | project-ops | Multi-stage build, non-root, healthcheck, pin versions |
-
-## Task Execution Flow
-
-1. Research: read related source files to understand existing patterns
-2. Plan: list files to change, confirm with user if >3 files
-3. Implement: one feature at a time, TDD (test first → implement → verify)
-4. Verify: run tests + lint inside Docker, screenshot for frontend
-5. Report: use the completion report format from ai-behavior rules
+1. Research → read related source files
+2. Plan → list files to change, confirm if >3 files
+3. Implement → one feature at a time, TDD
+4. Verify → run tests + lint, screenshot for frontend
+5. Report → completion report format (see ai-behavior)
 ENTRY
 
-  echo "✓ Generated $claude_md (entry file)"
+  echo "✓ Generated $claude_md"
 }
 
-# --- Generate Kiro steering files ---
-generate_kiro_steering() {
+# ============================================================
+# Generate for Kiro
+# ============================================================
+generate_kiro() {
   local steering_dir=".kiro/steering"
   local entry_file="$steering_dir/standards.md"
 
-  # Skip download if files were already linked (--all mode)
   if [ "${KIRO_LINKED:-}" != "true" ]; then
-    download_standards "$steering_dir"
+    echo "Core rules..."
+    for file in "${CORE_FILES[@]}"; do
+      download_file "$BASE_URL/$file" "$steering_dir/$file"
+    done
+    echo "Language rules..."
+    local detected
+    detected=($(detect_languages))
+    if [ ${#detected[@]} -eq 0 ]; then
+      for i in "${!LANG_FILES[@]}"; do
+        download_file "$BASE_URL/${LANG_FILES[$i]}" "$steering_dir/${LANG_FILES[$i]}"
+      done
+    else
+      for i in "${detected[@]}"; do
+        download_file "$BASE_URL/${LANG_FILES[$i]}" "$steering_dir/${LANG_FILES[$i]}"
+      done
+    fi
+    echo "On-demand rules..."
+    for i in "${!SKILL_SOURCES[@]}"; do
+      download_file "$BASE_URL/${SKILL_SOURCES[$i]}" "$steering_dir/on-demand/${SKILL_SOURCES[$i]}"
+    done
   fi
 
   cat > "$entry_file" << ENTRY
@@ -173,107 +269,71 @@ inclusion: always
 # aicoding standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
-ENTRY
-
-  cat >> "$entry_file" << 'ENTRY'
-
-## MCP: Serena
-
-- Always use Serena MCP tools for codebase navigation and symbol lookup before falling back to file reading.
-- Run `activate_project` + `check_onboarding_performed` at the start of each session if Serena is available.
-- Use Serena's semantic understanding (symbol lookup, references, type hierarchy) instead of relying solely on text search.
-- If Serena is not available, fall back to standard file reading and search tools.
 
 ## Core Philosophy
 
 One feature at a time. Verify before moving on. No overengineering.
 
-## Standards (auto-loaded from .kiro/steering/)
+## Task Flow
 
-The following steering files are automatically loaded into your context.
-You do NOT need to read them manually — they are already available to you.
-
+1. Research → read related source files
+2. Plan → list files to change, confirm if >3 files
+3. Implement → one feature at a time, TDD
+4. Verify → run tests + lint
+5. Report → completion report format
 ENTRY
 
-  for i in "${!FILES[@]}"; do
-    for d in "${DOWNLOADED[@]}"; do
-      if [ "$d" = "${FILES[$i]}" ]; then
-        echo "- **${FILES[$i]%.md}**: ${DESCRIPTIONS[$i]}" >> "$entry_file"
-        break
-      fi
-    done
-  done
-
-  cat >> "$entry_file" << 'ENTRY'
-
-## When to Apply Which Rules
-
-| Task | Primary Rules | Key Actions |
-|------|--------------|-------------|
-| **Any task** | ai-behavior | Follow 5-step flow: Research → Plan → Implement → Verify → Report |
-| **Write backend code** | code-quality, architecture, lang-* | TDD flow, layered architecture, DI, typed interfaces |
-| **Add new feature module** | architecture, lang-* | Create files in order: model → repo → service → handler → test |
-| **Add API endpoint** | code-quality, lang-*, security | Follow API endpoint flow, validate input, check security checklist |
-| **Frontend changes** | lang-frontend, harness-engineering, code-quality | Feature-based structure, component design, a11y, browser screenshot verification |
-| **New project setup** | project-ops | Docker-first: Dockerfile → docker-compose.yml → Makefile → linter setup → /health |
-| **Fix a bug** | code-quality, ai-behavior | Write failing test first, fix, verify, report |
-| **Security review** | security | Run 10-item security checklist before completion |
-| **Refactor / cleanup** | architecture, harness-engineering | Structural tests, no layer violations, strengthen harness |
-| **Write tests** | code-quality | TDD steps, mock externals, descriptive names, run in Docker |
-| **Docker / infra** | project-ops | Multi-stage build, non-root, healthcheck, pin versions |
-
-## Task Execution Flow
-
-1. Research: read related source files to understand existing patterns
-2. Plan: list files to change, confirm with user if >3 files
-3. Implement: one feature at a time, TDD (test first → implement → verify)
-4. Verify: run tests + lint inside Docker, screenshot for frontend
-5. Report: use the completion report format from ai-behavior rules
-ENTRY
-
-  echo "✓ Generated $entry_file (entry file)"
+  echo "✓ Generated $entry_file"
 }
 
-# --- Main ---
+# ============================================================
+# Main
+# ============================================================
 echo "=== AI Development Standards ==="
 echo ""
 
 case "$TARGET" in
   claude)
-    generate_claude_md
+    generate_claude
     ;;
   kiro)
-    generate_kiro_steering
+    generate_kiro
     ;;
   all)
-    generate_claude_md
+    generate_claude
     echo ""
-    # Reuse downloaded files via symlinks instead of downloading again
-    link_standards ".claude/rules" ".kiro/steering"
-    KIRO_LINKED=true generate_kiro_steering
+    echo "Linking to Kiro..."
+    local_rules=".claude/rules"
+    kiro_dir=".kiro/steering"
+    mkdir -p "$kiro_dir"
+    for f in "$local_rules"/*.md; do
+      [ -f "$f" ] && ln -sf "../../$f" "$kiro_dir/$(basename "$f")"
+      echo "  ↳ $(basename "$f")"
+    done
+    KIRO_LINKED=true generate_kiro
     ;;
 esac
 
-# --- Generate update script ---
-generate_update_script() {
-  local update_file=".aicoding-update.sh"
-  local args=""
-  case "$TARGET" in
-    kiro) args=" -s -- --kiro" ;;
-    all)  args=" -s -- --all" ;;
-  esac
-  cat > "$update_file" << EOF
+# Generate update script
+args=""
+case "$TARGET" in
+  kiro) args=" -s -- --kiro" ;;
+  all)  args=" -s -- --all" ;;
+esac
+cat > ".aicoding-update.sh" << EOF
 #!/usr/bin/env bash
-# Auto-generated by aicoding setup.sh
-# Re-run to update all AI development standards
 curl -fsSL ${BASE_URL}/setup.sh | bash${args}
 EOF
-  chmod +x "$update_file"
-  echo "✓ Generated $update_file (run this to update standards)"
-}
+chmod +x ".aicoding-update.sh"
+echo "✓ Generated .aicoding-update.sh"
 
-generate_update_script
-
+# Summary
 echo ""
-echo "Done! Standards installed from ${SOURCE}"
-echo "To update later, run: ./.aicoding-update.sh"
+echo "Done!"
+echo ""
+rules_count=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
+skills_count=$(ls -d .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+echo "  .claude/rules/   ← ${rules_count} rules (always loaded)"
+echo "  .claude/skills/  ← ${skills_count} skills (agent-invoked on demand)"
+echo ""
+echo "Update: ./.aicoding-update.sh"
