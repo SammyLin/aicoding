@@ -205,8 +205,13 @@ generate_claude() {
 
 generate_claude_md() {
   local claude_md="CLAUDE.md"
+  local marker_start="<!-- aicoding:start -->"
+  local marker_end="<!-- aicoding:end -->"
 
-  cat > "$claude_md" << ENTRY
+  # Build the aicoding section content
+  local aicoding_section
+  aicoding_section=$(cat << HEADER
+${marker_start}
 # aicoding standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
@@ -218,52 +223,98 @@ One feature at a time. Verify before moving on. No overengineering.
 ## How Rules Are Organized
 
 **Layer 1 — Always loaded (\`.claude/rules/\`):**
-ENTRY
+HEADER
+)
 
   for i in "${!CORE_FILES[@]}"; do
-    echo "- **${CORE_FILES[$i]%.md}**: ${CORE_DESCRIPTIONS[$i]}" >> "$claude_md"
+    aicoding_section+=$'\n'"- **${CORE_FILES[$i]%.md}**: ${CORE_DESCRIPTIONS[$i]}"
   done
 
-  # List detected language rules
-  local detected
+  # Detected language rules
   local _det
   _det=$(detect_languages)
   local detected=()
   [ -n "$_det" ] && read -ra detected <<< "$_det"
   if [ ${#detected[@]} -gt 0 ]; then
     for i in "${detected[@]}"; do
-      echo "- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}" >> "$claude_md"
+      aicoding_section+=$'\n'"- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}"
     done
   else
     for i in "${!LANG_FILES[@]}"; do
-      echo "- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}" >> "$claude_md"
+      aicoding_section+=$'\n'"- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}"
     done
   fi
 
-  cat >> "$claude_md" << 'ENTRY'
-
-**Layer 2 — Skills (Claude auto-invokes when relevant):**
-
-Skills are NOT pre-loaded. Claude sees their descriptions and decides when to read the full content.
-
-ENTRY
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"**Layer 2 — Skills (Claude auto-invokes when relevant):**"
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"Skills are NOT pre-loaded. Claude sees their descriptions and decides when to read the full content."
+  aicoding_section+=$'\n'
 
   for i in "${!SKILL_NAMES[@]}"; do
-    echo "- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}" >> "$claude_md"
+    aicoding_section+=$'\n'"- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}"
   done
 
-  cat >> "$claude_md" << 'ENTRY'
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"## Task Flow"
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"1. Research → read related source files"
+  aicoding_section+=$'\n'"2. Plan → list files to change, confirm if >3 files"
+  aicoding_section+=$'\n'"3. Implement → one feature at a time, TDD"
+  aicoding_section+=$'\n'"4. Verify → run tests + lint, screenshot for frontend"
+  aicoding_section+=$'\n'"5. Report → completion report format (see ai-behavior)"
+  aicoding_section+=$'\n'"${marker_end}"
 
-## Task Flow
+  if [ -f "$claude_md" ] && grep -q "$marker_start" "$claude_md"; then
+    # Update mode: replace only the aicoding section, preserve everything else
+    local before_file after_file new_file
+    before_file=$(mktemp)
+    after_file=$(mktemp)
+    new_file=$(mktemp)
 
-1. Research → read related source files
-2. Plan → list files to change, confirm if >3 files
-3. Implement → one feature at a time, TDD
-4. Verify → run tests + lint, screenshot for frontend
-5. Report → completion report format (see ai-behavior)
-ENTRY
+    # Extract content before the start marker
+    local in_section=false
+    local after_section=false
+    while IFS= read -r line; do
+      if [ "$line" = "$marker_start" ]; then
+        in_section=true
+        continue
+      fi
+      if [ "$line" = "$marker_end" ]; then
+        in_section=false
+        after_section=true
+        continue
+      fi
+      if [ "$after_section" = true ]; then
+        echo "$line" >> "$after_file"
+      elif [ "$in_section" = false ]; then
+        echo "$line" >> "$before_file"
+      fi
+    done < "$claude_md"
 
-  echo "✓ Generated $claude_md"
+    # Combine: before + new aicoding section + after
+    {
+      [ -s "$before_file" ] && cat "$before_file"
+      echo "$aicoding_section"
+      [ -s "$after_file" ] && cat "$after_file"
+    } > "$new_file"
+    mv "$new_file" "$claude_md"
+    rm -f "$before_file" "$after_file"
+    echo "✓ Updated aicoding section in $claude_md (preserved project-specific content)"
+  elif [ -f "$claude_md" ]; then
+    # Existing CLAUDE.md without markers: prepend aicoding section
+    local tmp_file
+    tmp_file=$(mktemp)
+    echo "$aicoding_section" > "$tmp_file"
+    echo "" >> "$tmp_file"
+    cat "$claude_md" >> "$tmp_file"
+    mv "$tmp_file" "$claude_md"
+    echo "✓ Prepended aicoding section to existing $claude_md"
+  else
+    # New file
+    echo "$aicoding_section" > "$claude_md"
+    echo "✓ Generated $claude_md"
+  fi
 }
 
 # ============================================================
