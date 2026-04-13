@@ -91,9 +91,9 @@ detect_languages() {
       elif [ -f "package.json" ] && grep -q '"react"' package.json 2>/dev/null; then
         found=true
       fi
-    elif [ -f "$marker" ]; then
+    elif [ -f "$marker" ] || find . -maxdepth 2 -name "$marker" 2>/dev/null | head -1 | grep -q .; then
       found=true
-    elif [ "$marker" = "pyproject.toml" ] && [ -f "requirements.txt" ]; then
+    elif [ "$marker" = "pyproject.toml" ] && ([ -f "requirements.txt" ] || find . -maxdepth 2 -name "requirements.txt" 2>/dev/null | head -1 | grep -q .); then
       found=true
     fi
 
