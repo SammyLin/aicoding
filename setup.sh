@@ -105,6 +105,7 @@ detect_languages() {
 }
 
 # --- Wrap raw rule content into a SKILL.md with frontmatter ---
+# Adds "managed-by: aicoding" so we can safely clean up on reinstall
 make_skill() {
   local name="$1" description="$2" source_content="$3" dest="$4"
   mkdir -p "$(dirname "$dest")"
@@ -112,10 +113,34 @@ make_skill() {
     echo "---"
     echo "name: $name"
     echo "description: \"$description\""
+    echo "managed-by: aicoding"
     echo "---"
     echo ""
     echo "$source_content"
   } > "$dest"
+}
+
+# --- Clean up only aicoding-managed files (don't touch user-created ones) ---
+clean_managed() {
+  local rules_dir=".claude/rules"
+  local skills_dir=".claude/skills"
+
+  # Remove managed rules (core + lang files we know about)
+  local all_rule_files=("${CORE_FILES[@]}" "${LANG_FILES[@]}")
+  for file in "${all_rule_files[@]}"; do
+    rm -f "$rules_dir/$file"
+  done
+
+  # Remove managed skills (check for managed-by marker)
+  if [ -d "$skills_dir" ]; then
+    for skill_dir in "$skills_dir"/*/; do
+      [ -d "$skill_dir" ] || continue
+      local skill_file="$skill_dir/SKILL.md"
+      if [ -f "$skill_file" ] && grep -q "managed-by: aicoding" "$skill_file" 2>/dev/null; then
+        rm -rf "$skill_dir"
+      fi
+    done
+  fi
 }
 
 # ============================================================
@@ -124,6 +149,9 @@ make_skill() {
 generate_claude() {
   local rules_dir=".claude/rules"
   local skills_dir=".claude/skills"
+
+  # Clean up previous aicoding-managed files (preserve user-created ones)
+  clean_managed
 
   # Layer 1: Core rules
   echo "Layer 1 — Core rules (always loaded):"
