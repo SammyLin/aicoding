@@ -1,3 +1,14 @@
+---
+paths:
+  - "**/*.ts"
+  - "**/*.js"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "package.json"
+  - "tsconfig.json"
+  - "pnpm-lock.yaml"
+---
+
 # Node / TypeScript Standards
 
 This file contains all Node.js and TypeScript specific conventions. Apply these rules when working in a Node/TypeScript project.

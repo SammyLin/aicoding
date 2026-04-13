@@ -3,21 +3,24 @@ set -euo pipefail
 
 # AI Development Standards — Progressive Disclosure
 #
-# 3 layers:
-#   1. Core rules (always loaded) — every task needs these
-#   2. Language rules (auto-detected) — only install what the project uses
-#   3. Skills (agent-invoked) — loaded when Claude decides it's relevant
+# Installs opinionated team standards for AI coding agents:
+#
+#   Layer 1. Core rules         — always loaded (ai-behavior, code-quality, architecture)
+#   Layer 2. Language rules      — path-scoped, auto-detected per project
+#   Layer 3. Skills             — agent-invoked on-demand (security, ops, harness, browser)
+#   Layer 4. Agent + Commands   — subagent + slash commands for Verify/Commit flow
+#   Layer 5. Hooks + Settings   — auto-format, secret-guard, permissions
 #
 # Usage:
 #   Claude Code: curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
-#   Kiro:        curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
+#   Kiro CLI:    curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
 #   Both:        curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
 
-BASE_URL="https://raw.githubusercontent.com/SammyLin/aicoding/main"
-SOURCE="https://github.com/SammyLin/aicoding"
+BASE_URL="${BASE_URL:-https://raw.githubusercontent.com/SammyLin/aicoding/main}"
+SOURCE="${SOURCE:-https://github.com/SammyLin/aicoding}"
 INSTALLED_AT="$(date +%Y-%m-%d)"
 
-# ── Layer 1: Core rules (always loaded, no paths) ──
+# ── Layer 1: Core rules (always loaded, no path scoping) ──
 CORE_FILES=(
   "ai-behavior.md"
   "code-quality.md"
@@ -30,18 +33,24 @@ CORE_DESCRIPTIONS=(
 )
 
 # ── Layer 2: Language rules (auto-detected per project) ──
-LANG_FILES=(    "lang-node.md"    "lang-python.md"  "lang-go.md"      "lang-frontend.md")
-LANG_DETECT=(   "package.json"    "pyproject.toml"   "go.mod"          "__frontend__")
-LANG_LABELS=(   "Node/TypeScript" "Python"           "Go"              "Frontend (React)")
+# Kiro uses `fileMatchPattern` with `|` alternation; Claude uses `paths:` YAML array (already in source files).
+LANG_FILES=(    "lang-node.md"                                                                 "lang-python.md"                                          "lang-go.md"                           "lang-frontend.md")
+LANG_DETECT=(   "package.json"                                                                  "pyproject.toml"                                          "go.mod"                               "__frontend__")
+LANG_LABELS=(   "Node/TypeScript"                                                               "Python"                                                   "Go"                                  "Frontend (React)")
 LANG_DESCRIPTIONS=(
   "pnpm, ESLint, Prettier, Zod, vitest"
   "uv, ruff, FastAPI, Pydantic, pytest"
   "go mod, golangci-lint, constructor DI, table-driven tests"
   "React, component design, state management, a11y"
 )
+LANG_KIRO_PATTERN=(
+  "**/*.ts|**/*.js|**/*.mjs|**/*.cjs|package.json|tsconfig.json|pnpm-lock.yaml"
+  "**/*.py|pyproject.toml|requirements.txt|uv.lock"
+  "**/*.go|go.mod|go.sum"
+  "**/*.tsx|**/*.jsx|**/*.css|**/*.scss|vite.config.*|next.config.*"
+)
 
-# ── Layer 3: Skills (agent decides when to load) ──
-# Skills are directories with SKILL.md inside
+# ── Layer 3: Skills (agent-invoked on demand) ──
 SKILL_NAMES=(   "security-check"    "infra-ops"           "harness-review"              "browser-verify")
 SKILL_SOURCES=( "security.md"       "project-ops.md"      "harness-engineering.md"      "agent-browser-skill.md")
 SKILL_DESCRIPTIONS=(
@@ -50,6 +59,14 @@ SKILL_DESCRIPTIONS=(
   "Guardrails and feedback loops. Use when a mistake recurs, when fixing systemic issues, or when strengthening the development harness."
   "agent-browser CLI for frontend verification. Use when you need to visually verify frontend changes in a real browser."
 )
+
+# ── Layer 4: Agent + Commands (Claude Code only; Kiro gets agent only) ──
+AGENT_FILES=( "agents/code-reviewer.md" )
+COMMAND_FILES=( "commands/commit.md" "commands/review.md" )
+
+# ── Layer 5: Hooks + Settings (Claude Code only) ──
+HOOK_FILES=( "hooks/auto-format.sh" "hooks/secret-guard.sh" )
+SETTINGS_SOURCE="settings.example.json"
 
 # --- Parse args ---
 TARGET="claude"
@@ -61,7 +78,11 @@ for arg in "$@"; do
   esac
 done
 
-# --- Download a single file ---
+# ============================================================
+# Helpers
+# ============================================================
+
+# Download a single file. Returns 0 on success.
 download_file() {
   local url="$1" dest="$2"
   mkdir -p "$(dirname "$dest")"
@@ -75,7 +96,7 @@ download_file() {
   fi
 }
 
-# --- Detect project languages ---
+# Detect project languages. Echoes indices (separated by spaces) into LANG_FILES.
 detect_languages() {
   local detected=()
   for i in "${!LANG_FILES[@]}"; do
@@ -83,7 +104,6 @@ detect_languages() {
     local found=false
 
     if [ "$marker" = "__frontend__" ]; then
-      # Frontend: check for .tsx files, vite/next config, or React in package.json
       if find . -name '*.tsx' -maxdepth 4 2>/dev/null | head -1 | grep -q .; then
         found=true
       elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ] || [ -f "next.config.js" ] || [ -f "next.config.ts" ]; then
@@ -104,8 +124,7 @@ detect_languages() {
   echo "${detected[@]+"${detected[@]}"}"
 }
 
-# --- Wrap raw rule content into a SKILL.md with frontmatter ---
-# Adds "managed-by: aicoding" so we can safely clean up on reinstall
+# Wrap raw rule content as a Claude Code SKILL.md with frontmatter.
 make_skill() {
   local name="$1" description="$2" source_content="$3" dest="$4"
   mkdir -p "$(dirname "$dest")"
@@ -120,24 +139,128 @@ make_skill() {
   } > "$dest"
 }
 
-# --- Clean up only aicoding-managed files (don't touch user-created ones) ---
-clean_managed() {
+# Strip leading YAML frontmatter from a file, echoing the body to stdout.
+strip_frontmatter() {
+  awk 'BEGIN{state=0} /^---$/{state++; next} state>=2{print} state==0{print}' "$1"
+}
+
+# Convert a lang rule source (Claude format with paths:) into Kiro steering format.
+# If pattern is empty, use inclusion: always.
+make_kiro_steering() {
+  local src="$1" dest="$2" pattern="${3:-}"
+  mkdir -p "$(dirname "$dest")"
+  {
+    echo "---"
+    if [ -n "$pattern" ]; then
+      echo "inclusion: fileMatch"
+      echo "fileMatchPattern: \"$pattern\""
+    else
+      echo "inclusion: always"
+    fi
+    echo "managed-by: aicoding"
+    echo "---"
+    strip_frontmatter "$src"
+  } > "$dest"
+}
+
+# Convert a Claude agent markdown file (with YAML frontmatter) into a Kiro CLI agent JSON.
+# Kiro CLI agents: https://kiro.dev/docs/cli/custom-agents/
+make_kiro_agent() {
+  local src="$1" dest="$2"
+  mkdir -p "$(dirname "$dest")"
+
+  # Extract frontmatter fields
+  local name description
+  name=$(awk 'BEGIN{s=0} /^---$/{s++; next} s==1 && /^name:/{sub(/^name:[[:space:]]*/, ""); print; exit}' "$src")
+  description=$(awk 'BEGIN{s=0} /^---$/{s++; next} s==1 && /^description:/{sub(/^description:[[:space:]]*/, ""); print; exit}' "$src")
+
+  # Extract body (everything after the second ---)
+  local body
+  body=$(strip_frontmatter "$src")
+
+  # JSON-escape the prompt body
+  local prompt_json
+  prompt_json=$(printf '%s' "$body" | awk 'BEGIN{ORS=""} {
+    gsub(/\\/, "\\\\")
+    gsub(/"/, "\\\"")
+    gsub(/\t/, "\\t")
+    gsub(/\r/, "\\r")
+    print $0 "\\n"
+  }')
+
+  # Description escape (it might contain quotes)
+  local desc_json
+  desc_json=$(printf '%s' "$description" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+  cat > "$dest" <<EOF
+{
+  "name": "$name",
+  "description": "$desc_json",
+  "tools": ["fs_read", "fs_write", "execute_bash"],
+  "allowedTools": ["fs_read"],
+  "prompt": "$prompt_json"
+}
+EOF
+}
+
+# Remove aicoding-managed files (preserve user-created ones).
+clean_managed_claude() {
   local rules_dir=".claude/rules"
   local skills_dir=".claude/skills"
+  local agents_dir=".claude/agents"
+  local commands_dir=".claude/commands"
+  local hooks_dir=".claude/hooks"
 
-  # Remove managed rules (core + lang files we know about)
+  # Core + lang rules
   local all_rule_files=("${CORE_FILES[@]}" "${LANG_FILES[@]}")
   for file in "${all_rule_files[@]}"; do
     rm -f "$rules_dir/$file"
   done
 
-  # Remove managed skills (check for managed-by marker)
+  # Skills (managed-by marker)
   if [ -d "$skills_dir" ]; then
     for skill_dir in "$skills_dir"/*/; do
       [ -d "$skill_dir" ] || continue
       local skill_file="$skill_dir/SKILL.md"
       if [ -f "$skill_file" ] && grep -q "managed-by: aicoding" "$skill_file" 2>/dev/null; then
         rm -rf "$skill_dir"
+      fi
+    done
+  fi
+
+  # Agents / commands / hooks: remove if shipped by us
+  for f in "${AGENT_FILES[@]}"; do
+    rm -f ".claude/$(basename "$f")"  # legacy path
+    rm -f "$agents_dir/$(basename "$f")"
+  done
+  for f in "${COMMAND_FILES[@]}"; do
+    rm -f "$commands_dir/$(basename "$f")"
+  done
+  for f in "${HOOK_FILES[@]}"; do
+    rm -f "$hooks_dir/$(basename "$f")"
+  done
+}
+
+clean_managed_kiro() {
+  local steering_dir=".kiro/steering"
+  local agents_dir=".kiro/agents"
+
+  # Remove aicoding-tagged steering files
+  if [ -d "$steering_dir" ]; then
+    for f in "$steering_dir"/*.md "$steering_dir"/on-demand/*.md; do
+      [ -f "$f" ] || continue
+      if grep -q "managed-by: aicoding" "$f" 2>/dev/null; then
+        rm -f "$f"
+      fi
+    done
+  fi
+
+  # Remove aicoding-tagged agents
+  if [ -d "$agents_dir" ]; then
+    for f in "$agents_dir"/*.json; do
+      [ -f "$f" ] || continue
+      if grep -q '"name":[[:space:]]*"code-reviewer"' "$f" 2>/dev/null; then
+        rm -f "$f"
       fi
     done
   fi
@@ -149,9 +272,11 @@ clean_managed() {
 generate_claude() {
   local rules_dir=".claude/rules"
   local skills_dir=".claude/skills"
+  local agents_dir=".claude/agents"
+  local commands_dir=".claude/commands"
+  local hooks_dir=".claude/hooks"
 
-  # Clean up previous aicoding-managed files (preserve user-created ones)
-  clean_managed
+  clean_managed_claude
 
   # Layer 1: Core rules
   echo "Layer 1 — Core rules (always loaded):"
@@ -159,17 +284,16 @@ generate_claude() {
     download_file "$BASE_URL/$file" "$rules_dir/$file"
   done
 
-  # Layer 2: Auto-detect languages
+  # Layer 2: Language rules (source files already have paths: frontmatter)
   echo ""
-  echo "Layer 2 — Detecting project languages..."
-  local detected
+  echo "Layer 2 — Language rules (path-scoped via paths: frontmatter):"
   local _det
   _det=$(detect_languages)
   local detected=()
   [ -n "$_det" ] && read -ra detected <<< "$_det"
 
   if [ ${#detected[@]} -eq 0 ]; then
-    echo "  No languages detected. Installing all language rules."
+    echo "  No languages detected — installing all."
     for i in "${!LANG_FILES[@]}"; do
       download_file "$BASE_URL/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
     done
@@ -180,9 +304,9 @@ generate_claude() {
     done
   fi
 
-  # Layer 3: Skills (download source, wrap as SKILL.md)
+  # Layer 3: Skills
   echo ""
-  echo "Layer 3 — Skills (agent-invoked, on-demand):"
+  echo "Layer 3 — Skills (agent-invoked on-demand):"
   for i in "${!SKILL_NAMES[@]}"; do
     local tmp_file
     tmp_file=$(mktemp)
@@ -198,9 +322,50 @@ generate_claude() {
     rm -f "$tmp_file"
   done
 
-  # Generate CLAUDE.md
+  # Layer 4: Agents + Commands
+  echo ""
+  echo "Layer 4 — Agents + Commands (Verify / Commit flow):"
+  for f in "${AGENT_FILES[@]}"; do
+    download_file "$BASE_URL/$f" "$agents_dir/$(basename "$f")"
+  done
+  for f in "${COMMAND_FILES[@]}"; do
+    download_file "$BASE_URL/$f" "$commands_dir/$(basename "$f")"
+  done
+
+  # Layer 5: Hooks + Settings
+  echo ""
+  echo "Layer 5 — Hooks + Settings (auto-format, secret-guard, permissions):"
+  for f in "${HOOK_FILES[@]}"; do
+    if download_file "$BASE_URL/$f" "$hooks_dir/$(basename "$f")"; then
+      chmod +x "$hooks_dir/$(basename "$f")" 2>/dev/null || true
+    fi
+  done
+  install_settings_json
+
+  # CLAUDE.md — uses @import style to keep main file short
   echo ""
   generate_claude_md
+}
+
+install_settings_json() {
+  local target=".claude/settings.json"
+  local tmp
+  tmp=$(mktemp)
+  if curl -fsSL "$BASE_URL/$SETTINGS_SOURCE" -o "$tmp" 2>/dev/null; then
+    if [ -f "$target" ]; then
+      # Existing settings.json — install as .aicoding.json sidecar for user to merge
+      cp "$tmp" ".claude/settings.aicoding.json"
+      echo "  ! .claude/settings.json already exists"
+      echo "    aicoding's recommended config installed as .claude/settings.aicoding.json"
+      echo "    Diff and merge manually, or delete existing and re-run to replace."
+    else
+      cp "$tmp" "$target"
+      echo "  ✓ settings.json (team-standard permissions + hooks wired up)"
+    fi
+  else
+    echo "  ✗ settings.example.json (not found on remote)"
+  fi
+  rm -f "$tmp"
 }
 
 generate_claude_md() {
@@ -208,10 +373,10 @@ generate_claude_md() {
   local marker_start="<!-- aicoding:start -->"
   local marker_end="<!-- aicoding:end -->"
 
-  # Build the aicoding section content
+  # Build the aicoding section using @import style.
+  # Keeps CLAUDE.md short; details live in the rule files.
   local aicoding_section
-  aicoding_section=$(cat << HEADER
-${marker_start}
+  aicoding_section="${marker_start}
 # aicoding standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
@@ -220,79 +385,70 @@ ${marker_start}
 
 One feature at a time. Verify before moving on. No overengineering.
 
-## How Rules Are Organized
+## Task Flow (5 steps)
 
-**Layer 1 — Always loaded (\`.claude/rules/\`):**
-HEADER
-)
+1. **Research** — read related source files (use built-in Explore subagent for breadth)
+2. **Plan** — list files to change, confirm if >3 files (use built-in Plan subagent)
+3. **Implement** — one feature at a time, TDD; \`auto-format\` hook runs on every edit
+4. **Verify** — run \`/review\` to invoke \`code-reviewer\` subagent against core rules
+5. **Commit** — run \`/commit\` to lint + test + produce a conventional commit message
 
-  for i in "${!CORE_FILES[@]}"; do
-    aicoding_section+=$'\n'"- **${CORE_FILES[$i]%.md}**: ${CORE_DESCRIPTIONS[$i]}"
-  done
+## Rules (path-scoped auto-loaded)
 
-  # Detected language rules
+Core rules (always in context):
+- @.claude/rules/ai-behavior.md
+- @.claude/rules/code-quality.md
+- @.claude/rules/architecture.md
+
+Language rules (load only when matching files are in context):"
+
   local _det
   _det=$(detect_languages)
   local detected=()
   [ -n "$_det" ] && read -ra detected <<< "$_det"
   if [ ${#detected[@]} -gt 0 ]; then
     for i in "${detected[@]}"; do
-      aicoding_section+=$'\n'"- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}"
+      aicoding_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
     done
   else
     for i in "${!LANG_FILES[@]}"; do
-      aicoding_section+=$'\n'"- **${LANG_FILES[$i]%.md}**: ${LANG_DESCRIPTIONS[$i]}"
+      aicoding_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
     done
   fi
 
   aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"**Layer 2 — Skills (Claude auto-invokes when relevant):**"
+  aicoding_section+=$'\n'"## Skills (agent-invoked on demand)"
   aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"Skills are NOT pre-loaded. Claude sees their descriptions and decides when to read the full content."
+  aicoding_section+=$'\n'"Skills live in \`.claude/skills/\`. Claude loads one only when its description matches the task."
   aicoding_section+=$'\n'
-
   for i in "${!SKILL_NAMES[@]}"; do
     aicoding_section+=$'\n'"- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}"
   done
 
   aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"## Task Flow"
+  aicoding_section+=$'\n'"## Subagent + Commands"
   aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"1. Research → read related source files"
-  aicoding_section+=$'\n'"2. Plan → list files to change, confirm if >3 files"
-  aicoding_section+=$'\n'"3. Implement → one feature at a time, TDD"
-  aicoding_section+=$'\n'"4. Verify → run tests + lint, screenshot for frontend"
-  aicoding_section+=$'\n'"5. Report → completion report format (see ai-behavior)"
+  aicoding_section+=$'\n'"- Subagent **code-reviewer** — structured review against core rules (no edits)"
+  aicoding_section+=$'\n'"- Command **/review** — invokes code-reviewer on current diff"
+  aicoding_section+=$'\n'"- Command **/commit** — lint + test + conventional commit message"
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"## Hooks (automatic)"
+  aicoding_section+=$'\n'
+  aicoding_section+=$'\n'"- **PostToolUse** (Edit/Write/MultiEdit) → \`.claude/hooks/auto-format.sh\` (gofmt / ruff / prettier)"
+  aicoding_section+=$'\n'"- **PreToolUse** (Bash) → \`.claude/hooks/secret-guard.sh\` (blocks \`.env\`, \`rm -rf\`, \`curl|sh\`)"
   aicoding_section+=$'\n'"${marker_end}"
 
   if [ -f "$claude_md" ] && grep -q "$marker_start" "$claude_md"; then
-    # Update mode: replace only the aicoding section, preserve everything else
     local before_file after_file new_file
-    before_file=$(mktemp)
-    after_file=$(mktemp)
-    new_file=$(mktemp)
-
-    # Extract content before the start marker
-    local in_section=false
-    local after_section=false
+    before_file=$(mktemp); after_file=$(mktemp); new_file=$(mktemp)
+    local in_section=false after_section=false
     while IFS= read -r line; do
-      if [ "$line" = "$marker_start" ]; then
-        in_section=true
-        continue
-      fi
-      if [ "$line" = "$marker_end" ]; then
-        in_section=false
-        after_section=true
-        continue
-      fi
-      if [ "$after_section" = true ]; then
-        echo "$line" >> "$after_file"
-      elif [ "$in_section" = false ]; then
-        echo "$line" >> "$before_file"
+      if [ "$line" = "$marker_start" ]; then in_section=true; continue; fi
+      if [ "$line" = "$marker_end" ]; then in_section=false; after_section=true; continue; fi
+      if [ "$after_section" = true ]; then echo "$line" >> "$after_file"
+      elif [ "$in_section" = false ]; then echo "$line" >> "$before_file"
       fi
     done < "$claude_md"
-
-    # Combine: before + new aicoding section + after
     {
       [ -s "$before_file" ] && cat "$before_file"
       echo "$aicoding_section"
@@ -302,7 +458,6 @@ HEADER
     rm -f "$before_file" "$after_file"
     echo "✓ Updated aicoding section in $claude_md (preserved project-specific content)"
   elif [ -f "$claude_md" ]; then
-    # Existing CLAUDE.md without markers: prepend aicoding section
     local tmp_file
     tmp_file=$(mktemp)
     echo "$aicoding_section" > "$tmp_file"
@@ -311,48 +466,101 @@ HEADER
     mv "$tmp_file" "$claude_md"
     echo "✓ Prepended aicoding section to existing $claude_md"
   else
-    # New file
     echo "$aicoding_section" > "$claude_md"
     echo "✓ Generated $claude_md"
   fi
 }
 
 # ============================================================
-# Generate for Kiro
+# Generate for Kiro CLI
 # ============================================================
 generate_kiro() {
   local steering_dir=".kiro/steering"
+  local agents_dir=".kiro/agents"
   local entry_file="$steering_dir/standards.md"
 
-  if [ "${KIRO_LINKED:-}" != "true" ]; then
-    echo "Core rules..."
-    for file in "${CORE_FILES[@]}"; do
-      download_file "$BASE_URL/$file" "$steering_dir/$file"
-    done
-    echo "Language rules..."
-    local detected
-    local _det
+  clean_managed_kiro
+
+  # Steering: core rules (always load)
+  echo "Layer 1 — Core rules (always loaded):"
+  for file in "${CORE_FILES[@]}"; do
+    local tmp
+    tmp=$(mktemp)
+    if curl -fsSL "$BASE_URL/$file" -o "$tmp" 2>/dev/null; then
+      make_kiro_steering "$tmp" "$steering_dir/$file" ""
+      echo "  ✓ $file"
+    else
+      echo "  ✗ $file (not found)"
+    fi
+    rm -f "$tmp"
+  done
+
+  # Steering: lang rules (inclusion: fileMatch with pattern)
+  echo ""
+  echo "Layer 2 — Language rules (inclusion: fileMatch):"
+  local _det
   _det=$(detect_languages)
   local detected=()
   [ -n "$_det" ] && read -ra detected <<< "$_det"
-    if [ ${#detected[@]} -eq 0 ]; then
-      for i in "${!LANG_FILES[@]}"; do
-        download_file "$BASE_URL/${LANG_FILES[$i]}" "$steering_dir/${LANG_FILES[$i]}"
-      done
-    else
-      for i in "${detected[@]}"; do
-        download_file "$BASE_URL/${LANG_FILES[$i]}" "$steering_dir/${LANG_FILES[$i]}"
-      done
-    fi
-    echo "On-demand rules..."
-    for i in "${!SKILL_SOURCES[@]}"; do
-      download_file "$BASE_URL/${SKILL_SOURCES[$i]}" "$steering_dir/on-demand/${SKILL_SOURCES[$i]}"
-    done
+
+  local lang_indices=()
+  if [ ${#detected[@]} -eq 0 ]; then
+    echo "  No languages detected — installing all."
+    for i in "${!LANG_FILES[@]}"; do lang_indices+=("$i"); done
+  else
+    lang_indices=("${detected[@]}")
   fi
 
+  for i in "${lang_indices[@]}"; do
+    local tmp
+    tmp=$(mktemp)
+    if curl -fsSL "$BASE_URL/${LANG_FILES[$i]}" -o "$tmp" 2>/dev/null; then
+      make_kiro_steering "$tmp" "$steering_dir/${LANG_FILES[$i]}" "${LANG_KIRO_PATTERN[$i]}"
+      echo "  ✓ ${LANG_FILES[$i]} → ${LANG_KIRO_PATTERN[$i]}"
+    else
+      echo "  ✗ ${LANG_FILES[$i]} (not found)"
+    fi
+    rm -f "$tmp"
+  done
+
+  # Steering: skills as on-demand (manual inclusion — user invokes by @-mention or fileMatch)
+  echo ""
+  echo "Layer 3 — Skills (on-demand steering):"
+  mkdir -p "$steering_dir/on-demand"
+  for i in "${!SKILL_SOURCES[@]}"; do
+    local tmp
+    tmp=$(mktemp)
+    if curl -fsSL "$BASE_URL/${SKILL_SOURCES[$i]}" -o "$tmp" 2>/dev/null; then
+      {
+        echo "---"
+        echo "inclusion: manual"
+        echo "managed-by: aicoding"
+        echo "---"
+        cat "$tmp"
+      } > "$steering_dir/on-demand/${SKILL_SOURCES[$i]}"
+      echo "  ✓ on-demand/${SKILL_SOURCES[$i]}"
+    fi
+    rm -f "$tmp"
+  done
+
+  # Agent: code-reviewer (converted to Kiro JSON)
+  echo ""
+  echo "Layer 4 — Agents (code-reviewer as JSON):"
+  local tmp
+  tmp=$(mktemp)
+  if curl -fsSL "$BASE_URL/${AGENT_FILES[0]}" -o "$tmp" 2>/dev/null; then
+    make_kiro_agent "$tmp" "$agents_dir/code-reviewer.json"
+    echo "  ✓ code-reviewer.json"
+  else
+    echo "  ✗ ${AGENT_FILES[0]} (not found)"
+  fi
+  rm -f "$tmp"
+
+  # Entry file — points Kiro at everything
   cat > "$entry_file" << ENTRY
 ---
 inclusion: always
+managed-by: aicoding
 ---
 # aicoding standards
 # source: ${SOURCE}
@@ -367,10 +575,21 @@ One feature at a time. Verify before moving on. No overengineering.
 1. Research → read related source files
 2. Plan → list files to change, confirm if >3 files
 3. Implement → one feature at a time, TDD
-4. Verify → run tests + lint
-5. Report → completion report format
+4. Verify → invoke code-reviewer agent: \`kiro-cli chat --agent code-reviewer\`
+5. Commit → conventional message, after lint + test pass
+
+## Not installed for Kiro CLI
+
+The following Claude Code features have no direct Kiro CLI equivalent and are skipped:
+
+- Slash commands (\`/commit\`, \`/review\`) — Kiro CLI doesn't support user-defined slash commands
+- Hooks — Kiro CLI's hook model differs (agentSpawn, userPromptSubmit, preToolUse). Configure in Kiro settings if needed.
+- settings.json — Kiro CLI permissions live in Kiro's own config, not in project files
+
+The rules and subagent above cover the core value. For hooks, see docs/hooks-cookbook.md upstream.
 ENTRY
 
+  echo ""
   echo "✓ Generated $entry_file"
 }
 
@@ -390,15 +609,9 @@ case "$TARGET" in
   all)
     generate_claude
     echo ""
-    echo "Linking to Kiro..."
-    local_rules=".claude/rules"
-    kiro_dir=".kiro/steering"
-    mkdir -p "$kiro_dir"
-    for f in "$local_rules"/*.md; do
-      [ -f "$f" ] && ln -sf "../../$f" "$kiro_dir/$(basename "$f")"
-      echo "  ↳ $(basename "$f")"
-    done
-    KIRO_LINKED=true generate_kiro
+    echo "=== Installing for Kiro CLI (in addition to Claude Code) ==="
+    echo ""
+    generate_kiro
     ;;
 esac
 
@@ -413,15 +626,35 @@ cat > ".aicoding-update.sh" << EOF
 curl -fsSL ${BASE_URL}/setup.sh | bash${args}
 EOF
 chmod +x ".aicoding-update.sh"
+echo ""
 echo "✓ Generated .aicoding-update.sh"
 
 # Summary
 echo ""
 echo "Done!"
 echo ""
-rules_count=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
-skills_count=$(ls -d .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
-echo "  .claude/rules/   ← ${rules_count} rules (always loaded)"
-echo "  .claude/skills/  ← ${skills_count} skills (agent-invoked on demand)"
+if [ "$TARGET" = "claude" ] || [ "$TARGET" = "all" ]; then
+  rules_count=$(ls .claude/rules/*.md 2>/dev/null | wc -l | tr -d ' ')
+  skills_count=$(ls -d .claude/skills/*/SKILL.md 2>/dev/null | wc -l | tr -d ' ')
+  agents_count=$(ls .claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
+  commands_count=$(ls .claude/commands/*.md 2>/dev/null | wc -l | tr -d ' ')
+  hooks_count=$(ls .claude/hooks/*.sh 2>/dev/null | wc -l | tr -d ' ')
+  echo "Claude Code:"
+  echo "  .claude/rules/      ← ${rules_count} rules"
+  echo "  .claude/skills/     ← ${skills_count} skills"
+  echo "  .claude/agents/     ← ${agents_count} agent(s)"
+  echo "  .claude/commands/   ← ${commands_count} command(s)"
+  echo "  .claude/hooks/      ← ${hooks_count} hook(s)"
+  [ -f .claude/settings.json ] && echo "  .claude/settings.json ← installed"
+fi
+if [ "$TARGET" = "kiro" ] || [ "$TARGET" = "all" ]; then
+  kiro_steering=$(ls .kiro/steering/*.md 2>/dev/null | wc -l | tr -d ' ')
+  kiro_ondemand=$(ls .kiro/steering/on-demand/*.md 2>/dev/null | wc -l | tr -d ' ')
+  kiro_agents=$(ls .kiro/agents/*.json 2>/dev/null | wc -l | tr -d ' ')
+  echo "Kiro CLI:"
+  echo "  .kiro/steering/     ← ${kiro_steering} rules"
+  echo "  .kiro/steering/on-demand/ ← ${kiro_ondemand} on-demand"
+  echo "  .kiro/agents/       ← ${kiro_agents} agent(s)"
+fi
 echo ""
 echo "Update: ./.aicoding-update.sh"
