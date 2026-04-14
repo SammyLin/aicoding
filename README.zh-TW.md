@@ -61,13 +61,15 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ### 5 步驟 flow 如何被工具支撐
 
-| 步驟 | 工具 |
-|------|------|
-| 1. Research | Claude Code 內建 Explore subagent |
-| 2. Plan | Claude Code 內建 Plan subagent |
-| 3. Implement | 主對話 + `auto-format` hook 自動整理 |
-| 4. **Verify** | `/review` → `code-reviewer` subagent 獨立審查 |
-| 5. **Commit** | `/commit` → lint + test + 規範化 commit message |
+| 步驟 | Claude Code | Kiro CLI |
+|------|-------------|----------|
+| 1. Research | 內建 Explore subagent | 主對話 |
+| 2. Plan | 內建 Plan subagent | 主對話 |
+| 3. Implement | 主對話 + `auto-format` hook 自動整理 | 主對話 |
+| 4. **Verify** | `/review` → `code-reviewer` subagent 獨立審查 | `kiro-cli chat --agent code-reviewer "review current changes"` |
+| 5. **Commit** | `/commit` → lint + test + 規範化 message | 手動跑 lint/test 後自行 commit（Kiro 無 slash command） |
+
+**為什麼有差：** Kiro CLI 不支援使用者自訂 slash command 或 auto-format hook。但 `code-reviewer` agent 本身會裝到 `.kiro/agents/code-reviewer.json`，所以結構化審查的價值還在 —— 只是呼叫方式不同。
 
 ## 安裝
 
