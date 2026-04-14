@@ -1,167 +1,178 @@
 # AI Development Standards
 
-**團隊起新系統時的 AI 編碼標準**，使用 progressive disclosure 安裝到 Claude Code 或 Kiro CLI — 該載的才載，該觸發的才觸發。
+> [繁體中文](README.zh-TW.md)
+
+**Team AI-coding standards for bootstrapping new projects**, installed into Claude Code or Kiro CLI with progressive disclosure — only what's needed, only when it's needed.
 
 **Core Philosophy:** One feature at a time. Verify before moving on. No overengineering.
 
 **Maintainer:** Sammy Lin
 
-## 為什麼要有這個 repo
+## Why this repo exists
 
-團隊起新系統時，每個成員的 AI agent 設定不一樣，導致：
-- 程式風格不一致
-- 有人跑 lint 有人不跑
-- `.env` 會被不小心讀進 context
-- commit message 各寫各的
+When a team starts a new project, every member's AI-agent setup differs, leading to:
 
-這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。
+- Inconsistent code style
+- Some run lint, some don't
+- `.env` accidentally pulled into context
+- Commit messages all over the place
+
+This repo codifies the team's best practices into a one-command installer.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
 ```
 
-## 裝了什麼？（Claude Code）
+## What gets installed (Claude Code)
 
 ```
 .claude/
-├── rules/                    ← 規則（Claude 自動載入）
-│   ├── ai-behavior.md           核心：5 步驟 flow、commit 頻率
-│   ├── code-quality.md          核心：TDD、錯誤處理、typing
-│   ├── architecture.md          核心：分層架構、DI
-│   └── lang-go.md               語言：依偵測結果裝，paths: 限定只在 Go 檔案載入
-├── skills/                   ← 技能（Claude 按需呼叫）
-│   ├── security-check/          新增 API、上線前、處理使用者輸入
-│   ├── infra-ops/               Docker、CI/CD、git workflow
-│   ├── harness-review/          系統性改進
-│   └── browser-verify/          前端視覺驗證
+├── rules/                    ← rules (auto-loaded by Claude)
+│   ├── ai-behavior.md           core: 5-step flow, commit frequency
+│   ├── code-quality.md          core: TDD, error handling, typing
+│   ├── architecture.md          core: layered architecture, DI
+│   └── lang-go.md               language: detected per project; paths: scope
+├── skills/                   ← skills (agent-invoked on demand)
+│   ├── security-check/          new API, shipping, user input
+│   ├── infra-ops/               Docker, CI/CD, git workflow
+│   ├── harness-review/          systemic improvements
+│   └── browser-verify/          frontend visual verification
 ├── agents/
-│   └── code-reviewer.md      ← Subagent：結構化審查變更
+│   └── code-reviewer.md      ← subagent: structured review of changes
 ├── commands/
-│   ├── commit.md             ← /commit 指令：lint + test + 產生規範化訊息
-│   └── review.md             ← /review 指令：呼叫 code-reviewer
+│   ├── commit.md             ← /commit: lint + test + conventional message
+│   └── review.md             ← /review: invokes code-reviewer
 ├── hooks/
-│   ├── auto-format.sh        ← PostToolUse：改完檔自動 format
-│   └── secret-guard.sh       ← PreToolUse Bash：擋 .env、rm -rf、curl | sh
-└── settings.json             ← 團隊權限 + hooks 掛載
-CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
+│   ├── auto-format.sh        ← PostToolUse: auto-format after edits
+│   └── secret-guard.sh       ← PreToolUse Bash: blocks .env, rm -rf, curl | sh
+└── settings.json             ← team permissions + hook wiring
+CLAUDE.md                     ← main file (short, @imports rules)
 ```
 
-## 3 + 2 層架構
+## 5-Layer Architecture
 
-| 層 | 位置 | 載入時機 | 內容 |
-|----|------|---------|------|
-| **Core** | `.claude/rules/` | 永遠 | 每個任務都需要 |
-| **Language** | `.claude/rules/` | 檔案符合 `paths:` 時 | 語言特定慣例 |
-| **Skills** | `.claude/skills/` | Claude 判斷需要時 | 安全、ops、harness、browser |
-| **Agent + Commands** | `.claude/agents/` + `.claude/commands/` | 使用者呼叫時 | Verify / Commit 流程 |
-| **Hooks + Settings** | `.claude/hooks/` + `.claude/settings.json` | 事件觸發 | 自動 format、擋危險指令 |
+| Layer | Location | When Loaded | Content |
+|-------|----------|-------------|---------|
+| **Core** | `.claude/rules/` | Always | Needed for every task |
+| **Language** | `.claude/rules/` | When `paths:` match | Language-specific conventions |
+| **Skills** | `.claude/skills/` | Claude decides | Security, ops, harness, browser |
+| **Agent + Commands** | `.claude/agents/` + `.claude/commands/` | User invokes | Verify / Commit flow |
+| **Hooks + Settings** | `.claude/hooks/` + `.claude/settings.json` | Event-triggered | Auto-format, block risky commands |
 
-### 5 步驟 flow 如何被工具支撐
+### How the 5-step flow is supported by tooling
 
-| 步驟 | 工具 |
+| Step | Tool |
 |------|------|
-| 1. Research | Claude Code 內建 Explore subagent |
-| 2. Plan | Claude Code 內建 Plan subagent |
-| 3. Implement | 主對話 + `auto-format` hook 自動整理 |
-| 4. **Verify** | `/review` → `code-reviewer` subagent 獨立審查 |
-| 5. **Commit** | `/commit` → lint + test + 規範化 commit message |
+| 1. Research | Claude Code's built-in Explore subagent |
+| 2. Plan | Claude Code's built-in Plan subagent |
+| 3. Implement | Main conversation + `auto-format` hook cleans up after every edit |
+| 4. **Verify** | `/review` → `code-reviewer` subagent does an independent pass |
+| 5. **Commit** | `/commit` → lint + test + conventional commit message |
 
-## 安裝
+## Install
 
 ```bash
-# Claude Code（自動偵測專案語言）
+# Claude Code (auto-detects project language)
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
 
 # Kiro CLI
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
 
-# 兩個都裝
+# Both
 curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
 ```
 
-### 語言自動偵測
+### Language auto-detection
 
-| 偵測到 | 裝 |
-|--------|-----|
+| Detected | Installs |
+|----------|----------|
 | `go.mod` | `lang-go.md` |
 | `package.json` | `lang-node.md` |
 | `pyproject.toml` / `requirements.txt` | `lang-python.md` |
 | `.tsx` / `vite.config.*` / React | `lang-frontend.md` |
-| 都沒有 | 全裝 |
+| None | All of the above |
 
-## Kiro CLI 的差別
+## Kiro CLI differences
 
-Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
+Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
-| Claude Code | Kiro CLI | 狀態 |
-|------------|---------|------|
-| Rules（`paths:`） | Steering（`inclusion: fileMatch` + `fileMatchPattern`） | ✅ 自動轉換 |
-| Skills | Steering `inclusion: manual` | ✅ 裝在 `on-demand/` |
-| Agents（markdown） | Agents（**JSON**） | ✅ 自動轉換格式 |
-| Commands（`/commit`） | — | ❌ Kiro CLI 無對應功能 |
-| Hooks | Hooks（event 名不同） | ❌ 模型差太多，不硬裝 |
-| `settings.json`（專案） | 機器層級設定 | ❌ 不是專案共享 |
+| Claude Code | Kiro CLI | Status |
+|-------------|----------|--------|
+| Rules (`paths:`) | Steering (`inclusion: fileMatch` + `fileMatchPattern`) | ✅ auto-converted |
+| Skills | Steering `inclusion: manual` | ✅ installed under `on-demand/` |
+| Agents (markdown) | Agents (**JSON**) | ✅ format auto-converted |
+| Commands (`/commit`) | — | ❌ Kiro CLI has no equivalent |
+| Hooks | Hooks (different events) | ❌ model too different — not installed |
+| `settings.json` (project-level) | Machine-level settings | ❌ not a project-shared concern |
 
-## 標準內容
+## Standard Contents
 
-### Core Rules — 永遠載入
+### Core Rules — always loaded
 
-| 檔案 | 內容 |
-|------|------|
-| [ai-behavior.md](ai-behavior.md) | 5 步驟 flow、commit 頻率、completion report |
-| [code-quality.md](code-quality.md) | TDD、錯誤處理、typing、API endpoint 流程 |
-| [architecture.md](architecture.md) | 分層架構、DI、模組邊界 |
+| File | Content |
+|------|---------|
+| [ai-behavior.md](ai-behavior.md) | 5-step flow, commit frequency, completion report |
+| [code-quality.md](code-quality.md) | TDD, error handling, typing, API endpoint flow |
+| [architecture.md](architecture.md) | Layered architecture, DI, module boundaries |
 
-### Language Rules — 偵測到才裝
+### Language Rules — installed when detected
 
-| 檔案 | 語言 | 涵蓋 |
-|------|------|------|
-| [lang-node.md](lang-node.md) | Node / TypeScript | pnpm、ESLint、Prettier、Zod、vitest |
-| [lang-python.md](lang-python.md) | Python | uv、ruff、FastAPI、Pydantic、pytest |
-| [lang-go.md](lang-go.md) | Go | go mod、golangci-lint、table-driven tests |
-| [lang-frontend.md](lang-frontend.md) | Frontend | React、元件設計、a11y |
+| File | Language | Covers |
+|------|----------|--------|
+| [lang-node.md](lang-node.md) | Node / TypeScript | pnpm, ESLint, Prettier, Zod, vitest |
+| [lang-python.md](lang-python.md) | Python | uv, ruff, FastAPI, Pydantic, pytest |
+| [lang-go.md](lang-go.md) | Go | go mod, golangci-lint, table-driven tests |
+| [lang-frontend.md](lang-frontend.md) | Frontend | React, component design, a11y |
 
-### Skills — Claude 按需呼叫
+### Skills — agent-invoked on demand
 
-| Skill | 來源 | 觸發場景 |
-|-------|------|---------|
-| `security-check` | [security.md](security.md) | 新增 API、上線前、處理使用者輸入 |
-| `infra-ops` | [project-ops.md](project-ops.md) | Docker、CI/CD、git workflow |
-| `harness-review` | [harness-engineering.md](harness-engineering.md) | 系統性改進 |
-| `browser-verify` | [agent-browser-skill.md](agent-browser-skill.md) | 前端視覺驗證 |
+| Skill | Source | Trigger |
+|-------|--------|---------|
+| `security-check` | [security.md](security.md) | adding APIs, shipping, handling user input |
+| `infra-ops` | [project-ops.md](project-ops.md) | Docker, CI/CD, git workflow |
+| `harness-review` | [harness-engineering.md](harness-engineering.md) | systemic improvements |
+| `browser-verify` | [agent-browser-skill.md](agent-browser-skill.md) | frontend visual verification |
 
-### Agent + Commands — 支撐 Verify / Commit
+### Agent + Commands — supporting Verify / Commit
 
-| 檔案 | 用途 |
-|------|------|
-| [agents/code-reviewer.md](agents/code-reviewer.md) | Subagent：結構化審查變更（Must Fix / Should Consider / OK） |
-| [commands/commit.md](commands/commit.md) | `/commit`：lint + test + 規範化 commit message |
-| [commands/review.md](commands/review.md) | `/review`：呼叫 code-reviewer subagent |
+| File | Purpose |
+|------|---------|
+| [agents/code-reviewer.md](agents/code-reviewer.md) | Subagent: structured review of changes (Must Fix / Should Consider / OK) |
+| [commands/commit.md](commands/commit.md) | `/commit`: lint + test + conventional commit message |
+| [commands/review.md](commands/review.md) | `/review`: invoke the code-reviewer subagent |
 
 ### Hooks + Settings
 
-| 檔案 | 觸發 | 做什麼 |
-|------|------|-------|
-| [hooks/auto-format.sh](hooks/auto-format.sh) | `PostToolUse` Edit/Write | 依副檔名跑 gofmt / ruff / prettier（失敗不擋） |
-| [hooks/secret-guard.sh](hooks/secret-guard.sh) | `PreToolUse` Bash | 擋 `.env`、`rm -rf`、`curl \| sh`、SSH key |
-| [settings.json](settings.json) | — | 團隊預設權限 + hooks 掛載（裝成 `.claude/settings.json`） |
+| File | Trigger | Action |
+|------|---------|--------|
+| [hooks/auto-format.sh](hooks/auto-format.sh) | `PostToolUse` Edit/Write | Run gofmt / ruff / prettier by extension (silent on failure) |
+| [hooks/secret-guard.sh](hooks/secret-guard.sh) | `PreToolUse` Bash | Block `.env`, `rm -rf`, `curl \| sh`, SSH keys |
+| [settings.json](settings.json) | — | Team-default permissions + hook wiring (installed as `.claude/settings.json`) |
 
-## 更新
+## Update
 
 ```bash
 ./.aicoding-update.sh
 ```
 
-## 知識庫 (`docs/`)
+## Knowledge Base (`docs/`)
 
-解釋背後設計原則的文章，**不**裝進專案：
+Articles explaining the design rationale. **Not** installed into target projects.
 
-| 文章 | 主題 |
-|------|------|
-| [逐步揭露.md](docs/逐步揭露.md) | 為什麼不該一次塞爆 context |
-| [context管理.md](docs/context管理.md) | Skills、memory、subagents、compaction |
-| [agent-harness-基本原則.md](docs/agent-harness-基本原則.md) | Agent 系統 3 原則 |
-| [我可以停掉什麼.md](docs/我可以停掉什麼.md) | 定期檢視什麼還需要 |
+| Article | Topic |
+|---------|-------|
+| [逐步揭露.md](docs/逐步揭露.md) | Why you shouldn't stuff everything into context at once |
+| [context管理.md](docs/context管理.md) | Skills, memory, subagents, compaction |
+| [agent-harness-基本原則.md](docs/agent-harness-基本原則.md) | Three principles for agent systems |
+| [我可以停掉什麼.md](docs/我可以停掉什麼.md) | Periodically review what's still needed |
+| [使用指南.md](docs/使用指南.md) | Team usage guide (onboarding, daily workflow, troubleshooting) |
+| [github調查報告-dotclaude結構.md](docs/github調查報告-dotclaude結構.md) | GitHub survey of `.claude/` conventions |
+
+## Contributing: Language Policy
+
+- **AI-facing files** (rules, skills, agents, commands, hooks, `CLAUDE.md`) are written in **English**.
+- **Human-facing docs** (`docs/`, this README) may be bilingual.
+- **When editing README, update both `README.md` and [`README.zh-TW.md`](README.zh-TW.md)** — they must stay in sync.
 
 ## License
 

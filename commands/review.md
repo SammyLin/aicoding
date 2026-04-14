@@ -1,16 +1,16 @@
 ---
-description: 呼叫 code-reviewer subagent 審查目前所有未提交的變更
+description: Invoke the code-reviewer subagent to audit all uncommitted changes
 allowed-tools: Task, Bash(git status)
 ---
 
-使用 Task 工具呼叫 `code-reviewer` subagent，讓它獨立審查當前所有變更。
+Use the Task tool to spawn the `code-reviewer` subagent to independently review the current diff.
 
-步驟：
+Steps:
 
-1. 先跑 `git status --short` 確認有變更可審
-2. 如無變更，回報「無變更可審」並結束
-3. 呼叫 `code-reviewer` subagent，prompt 為：
-   > 審查目前 staged + unstaged 所有變更，依你的 checklist 給出結構化報告。
-4. 直接把 subagent 的報告呈現給使用者，**不要**自己再加一層摘要或評論
+1. Run `git status --short` to confirm there are changes to review.
+2. If there are none, report "no changes to review" and stop.
+3. Invoke the `code-reviewer` subagent with prompt:
+   > Review all staged + unstaged changes against your checklist and produce a structured report.
+4. Present the subagent's report verbatim. **Do not** add your own summary or commentary on top.
 
-這個指令的重點是提供「獨立 context 視角」的審查，所以不要污染。
+The point of this command is to deliver an *independent-context* review — don't pollute it.

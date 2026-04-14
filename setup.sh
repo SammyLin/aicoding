@@ -192,7 +192,7 @@ make_kiro_agent() {
   local desc_json
   desc_json=$(printf '%s' "$description" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
-  # code-reviewer is read-only (審查不改碼) + limited to git-read commands.
+  # code-reviewer is read-only (review never edits) + limited to git-read commands.
   # Other agents added later may need broader tools — this currently assumes
   # the single agent we ship matches this profile.
   cat > "$dest" <<EOF

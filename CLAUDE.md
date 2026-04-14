@@ -1,104 +1,111 @@
 # aicoding repo
 
-團隊起新系統時的 AI 編碼標準安裝器。使用 **progressive disclosure**：核心規則永遠載入、語言規則依 `paths:` 條件載入、情境規則作為 Skills 按需呼叫、加上 Agent + Commands + Hooks 支撐 5 步驟 flow。
+Team AI-coding standards installer for bootstrapping new projects. Built on **progressive disclosure**: core rules always loaded, language rules gated by `paths:`, situational rules invoked as Skills, plus Agent + Commands + Hooks to support the 5-step flow.
 
-## Repo 結構
+## Repo Layout
 
 ```
-核心規則（永遠安裝到 .claude/rules/）：
-  ai-behavior.md         — 5 步驟 flow、commit 頻率
-  code-quality.md        — TDD、錯誤處理、typing
-  architecture.md        — 分層架構、DI
+Core rules (always installed to .claude/rules/):
+  ai-behavior.md         — 5-step flow, commit frequency
+  code-quality.md        — TDD, error handling, typing
+  architecture.md        — Layered architecture, DI
 
-語言規則（自動偵測；有 paths: frontmatter，只在相關檔案時載入）：
-  lang-node.md           — 若有 package.json
-  lang-python.md         — 若有 pyproject.toml / requirements.txt
-  lang-go.md             — 若有 go.mod
-  lang-frontend.md       — 若有 .tsx / vite.config / React
+Language rules (auto-detected; have `paths:` frontmatter, loaded only when relevant files are in context):
+  lang-node.md           — when package.json exists
+  lang-python.md         — when pyproject.toml / requirements.txt exists
+  lang-go.md             — when go.mod exists
+  lang-frontend.md       — when .tsx / vite.config / React is present
 
-情境規則（包成 Skills，agent 按需呼叫）：
+Situational rules (wrapped as Skills, invoked by the agent on demand):
   security.md            → .claude/skills/security-check/SKILL.md
   project-ops.md         → .claude/skills/infra-ops/SKILL.md
   harness-engineering.md → .claude/skills/harness-review/SKILL.md
   agent-browser-skill.md → .claude/skills/browser-verify/SKILL.md
 
-Agent + Commands（支撐 Verify / Commit 流程）：
+Agent + Commands (support Verify / Commit flow):
   agents/code-reviewer.md    → .claude/agents/code-reviewer.md
   commands/commit.md         → .claude/commands/commit.md
   commands/review.md         → .claude/commands/review.md
 
-Hooks + Settings（自動化與權限）：
+Hooks + Settings (automation and permissions):
   hooks/auto-format.sh       → .claude/hooks/auto-format.sh
   hooks/secret-guard.sh      → .claude/hooks/secret-guard.sh
   settings.json              → .claude/settings.json
 
-其他：
-  setup.sh                   — 安裝器（偵測語言、轉換 Kiro 格式）
-  docs/                      — 知識庫（不安裝到專案）
+Other:
+  setup.sh                   — Installer (language detection, Kiro format conversion)
+  docs/                      — Knowledge base (not installed to target projects)
 ```
 
 ## 5-Layer Design
 
-| 層 | 位置 | 載入時機 | 內容 |
-|---|------|---------|------|
-| 1. Core | `.claude/rules/` | 永遠 | 每個任務都需要 |
-| 2. Language | `.claude/rules/` | 檔案符合 `paths:` | 語言慣例 |
-| 3. Skills | `.claude/skills/` | Claude 判斷需要 | Security / ops / harness / browser |
-| 4. Agent + Commands | `.claude/agents/` + `.claude/commands/` | 使用者呼叫 | Verify / Commit 流程 |
-| 5. Hooks + Settings | `.claude/hooks/` + `.claude/settings.json` | 事件觸發 | 自動 format、擋危險指令 |
+| Layer | Location | When Loaded | Content |
+|-------|----------|-------------|---------|
+| 1. Core | `.claude/rules/` | Always | Needed for every task |
+| 2. Language | `.claude/rules/` | When files match `paths:` | Language conventions |
+| 3. Skills | `.claude/skills/` | Claude decides | Security / ops / harness / browser |
+| 4. Agent + Commands | `.claude/agents/` + `.claude/commands/` | User invocation | Verify / Commit flow |
+| 5. Hooks + Settings | `.claude/hooks/` + `.claude/settings.json` | Event-triggered | Auto-format, block risky commands |
 
-## Kiro CLI 的對應
+## Kiro CLI Mapping
 
-Kiro CLI 格式跟 Claude 不完全重疊，setup.sh 會自動做必要轉換：
+Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the conversions automatically:
 
-| Claude | Kiro CLI | 做什麼 |
-|--------|---------|-------|
-| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: "a\|b\|c"` | setup.sh 自動轉換 |
-| Agent markdown | Agent JSON | setup.sh 解析 frontmatter + body，寫成 JSON |
-| Commands / Hooks / settings.json | — | ❌ Kiro CLI 不支援，不安裝 |
+| Claude Code | Kiro CLI | What setup.sh does |
+|-------------|----------|--------------------|
+| `paths:` YAML array | `inclusion: fileMatch` + `fileMatchPattern: "a\|b\|c"` | Auto-converts |
+| Agent markdown | Agent JSON | Parses frontmatter + body, emits JSON |
+| Commands / Hooks / settings.json | — | ❌ Not supported by Kiro CLI — skipped |
 
-## 編輯原則
+## Editing Principles
 
-- **核心規則**：保持精簡、價值密度高。這些是 ALWAYS 在 context
-- **語言規則**：自成一格，靠 `paths:` 限定載入時機。偵測邏輯在 `setup.sh` `detect_languages()`
-- **情境規則**：原始檔（security.md 等）由 setup.sh 包成 SKILL.md 加 frontmatter
-- **Skills description**（~250 字元）是觸發詞 — 寫得越像使用者問的話越好
-- **Agent + Commands**：**克制原則** — 只裝 1 agent + 2 commands，對應 5 步驟的 Verify + Commit。多裝是人設動物園
-- **Hooks**：只裝與語言無關、低風險的兩個（auto-format、secret-guard）
-- **settings.json**：team-level 權限共識，個人偏好不放這裡
+- **Core rules**: keep concise, high value density. These are ALWAYS in context.
+- **Language rules**: self-contained per language. Scoped by `paths:`. Detection logic lives in `setup.sh::detect_languages()`.
+- **Situational rules**: source files (security.md etc.) are wrapped into SKILL.md with frontmatter by setup.sh.
+- **Skill description** (~250 chars) is the trigger — phrase it the way a user would naturally ask.
+- **Agent + Commands**: **restraint principle** — only one agent + two commands, mapping to Verify + Commit in the 5-step flow. More than that is a "persona zoo."
+- **Hooks**: only ship the two language-agnostic, low-risk ones (auto-format, secret-guard).
+- **settings.json**: team-level permission consensus — personal preferences don't belong here.
 
-## 新增一項的流程
+## Adding a New Item
 
-### 新增 Skill
+### Adding a Skill
 
-1. 寫原始檔 `foo.md`
-2. 加到 `setup.sh` 的 `SKILL_NAMES` / `SKILL_SOURCES` / `SKILL_DESCRIPTIONS` 陣列
+1. Write the source file `foo.md`.
+2. Add to `setup.sh` arrays: `SKILL_NAMES` / `SKILL_SOURCES` / `SKILL_DESCRIPTIONS`.
 
-### 新增語言
+### Adding a Language
 
-1. 寫 `lang-xxx.md`，開頭加 `paths:` frontmatter
-2. 加到 `setup.sh` 的 `LANG_FILES` / `LANG_DETECT` / `LANG_LABELS` / `LANG_DESCRIPTIONS` / `LANG_KIRO_PATTERN` 陣列
+1. Write `lang-xxx.md` with a `paths:` frontmatter at the top.
+2. Add to `setup.sh` arrays: `LANG_FILES` / `LANG_DETECT` / `LANG_LABELS` / `LANG_DESCRIPTIONS` / `LANG_KIRO_PATTERN`.
 
-### 新增 Agent / Command / Hook
+### Adding an Agent / Command / Hook
 
-**先想想非裝不可嗎？** 小心 agent 人設動物園、指令湊數、每次 edit 跑全測試這類反模式。
-如果真的要：
+**First ask: is this really necessary?** Watch for anti-patterns like persona zoos, filler commands, or running the full test suite on every edit.
 
-1. 寫在 `agents/` / `commands/` / `hooks/`
-2. 加到 `setup.sh` 的 `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES`
+If truly needed:
 
-## 測試
+1. Place the file under `agents/` / `commands/` / `hooks/`.
+2. Add to `setup.sh` arrays: `AGENT_FILES` / `COMMAND_FILES` / `HOOK_FILES`.
+
+## Testing
 
 ```bash
-# 啟動本地 HTTP server 服務此 repo
+# Start a local HTTP server that serves this repo
 python3 -m http.server 8765 --bind 127.0.0.1 &
 
-# 在臨時目錄模擬 Go 專案
+# Simulate a Go project in a temp dir
 mkdir -p /tmp/test && cd /tmp/test && touch go.mod
 BASE_URL=http://127.0.0.1:8765 bash <(curl -s http://127.0.0.1:8765/setup.sh)
 
-# 檢查結果
+# Inspect the result
 find /tmp/test -type f | sort
 ```
 
-`setup.sh` 支援 `BASE_URL` 環境變數覆寫，方便本地測試。
+`setup.sh` honors a `BASE_URL` environment variable override for local testing.
+
+## Language Policy
+
+- **AI-facing files** (rules, skills, agents, commands, hooks, this CLAUDE.md, `setup.sh` output) are written in **English**.
+- **Human-facing docs** (README, `docs/`) may be bilingual. The primary README is English; `README.zh-TW.md` is the Traditional Chinese mirror.
+- **When editing README, update both `README.md` and `README.zh-TW.md`** — they must stay in sync.

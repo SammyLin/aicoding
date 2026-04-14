@@ -1,78 +1,80 @@
 ---
-description: 跑完整 lint + test，然後產生符合規範的 commit message
-argument-hint: [optional 補充說明]
+description: Run the full lint + test suite, then produce a conventional commit message
+argument-hint: [optional context]
 allowed-tools: Bash(git:*), Bash(npm:*), Bash(pnpm:*), Bash(go:*), Bash(pytest:*), Bash(uv:*), Bash(ruff:*), Read
 ---
 
-執行以下流程，每步失敗就停下回報，**不要繼續**：
+Run the following pipeline. If any step fails, stop and report. **Do not continue.**
 
-## 1. 檢查是否有變更
+## 1. Check for changes
 
 ```bash
 git status --short
 ```
 
-如果沒有 staged 或 unstaged 變更，告訴使用者「無變更可提交」並結束。
+If there are no staged or unstaged changes, tell the user "no changes to commit" and stop.
 
-## 2. 偵測專案類型，跑 lint + test
+## 2. Detect project type, run lint + test
 
-依偵測到的檔案選對應指令：
+Pick the command based on detected files:
 
-| 偵測到 | Lint | Test |
-|--------|------|------|
+| Detected | Lint | Test |
+|----------|------|------|
 | `package.json` with `pnpm-lock.yaml` | `pnpm run lint` | `pnpm test` |
 | `package.json` with `package-lock.json` | `npm run lint` | `npm test` |
 | `go.mod` | `go vet ./...` | `go test ./...` |
 | `pyproject.toml` | `uv run ruff check .` | `uv run pytest` |
 
-若指令不存在（例如 `pnpm run lint` script 沒定義）就跳過那一步，不要失敗。
+If a command isn't defined (e.g. no `lint` script in `package.json`), skip that step rather than fail.
 
-## 3. 總結變更意圖
+## 3. Summarize the intent of the change
 
-跑 `git diff --cached` 和 `git diff`，閱讀後回答兩個問題：
+Run `git diff --cached` and `git diff`, then answer two questions:
 
-1. **為什麼要做這個變更？**（動機、要解決的問題）
-2. **主要改了哪些檔案或模組？**（scope）
+1. **Why is this change being made?** (motivation, the problem it solves)
+2. **Which files or modules are primarily affected?** (scope)
 
-不要描述逐行改了什麼字，那是 diff 本身的工作。
+Do not describe line-by-line edits — that's what the diff is for.
 
-## 4. 草擬 commit message
+## 4. Draft the commit message
 
-格式：
+Format:
 
 ```
-<type>: <短述，繁體中文或英文皆可，≤ 60 字>
+<type>: <short summary, ≤ 60 chars>
 
-<選填：一段說明動機，為什麼這樣改。換行包在 72 字內。>
+<optional body: one paragraph on motivation — why this change.
+Wrap lines at 72 chars.>
 ```
 
-type 從這些挑：
-- `feat` — 新功能
-- `fix` — bug 修復
-- `refactor` — 不改行為的重寫
-- `docs` — 文件
-- `test` — 只改測試
-- `chore` — 雜項（依賴、設定檔、CI）
+Pick `type` from:
+- `feat` — new functionality
+- `fix` — bug fix
+- `refactor` — behavior-preserving rewrite
+- `docs` — documentation only
+- `test` — test-only change
+- `chore` — housekeeping (deps, config, CI)
 
-範例：
+Example:
+
 ```
-feat: 加 code-reviewer agent 與 /commit /review 指令
+feat: add code-reviewer agent and /commit /review commands
 
-對應 5 步驟 flow 中的 Verify 與 Commit，把常見 best practice
-固化成團隊預設。
+Covers the Verify and Commit steps of the 5-step flow,
+codifying common best practices as team defaults.
 ```
 
-## 5. 確認後提交
+## 5. Commit after confirmation
 
-**先把草擬的 message 顯示給使用者，等確認**。然後：
+**Show the drafted message to the user and wait for confirmation** before committing:
 
 ```bash
 git add -A
 git commit -m "<drafted message>"
 ```
 
-最後跑 `git log --oneline -1` 確認提交成功。
+Finally, run `git log --oneline -1` to confirm the commit succeeded.
 
-## 使用者補充
+## User-supplied context
 
 $ARGUMENTS
