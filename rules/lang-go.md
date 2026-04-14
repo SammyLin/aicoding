@@ -1,3 +1,10 @@
+---
+paths:
+  - "**/*.go"
+  - "go.mod"
+  - "go.sum"
+---
+
 # Go Standards
 
 This file contains all Go specific conventions. Apply these rules when working in a Go project.

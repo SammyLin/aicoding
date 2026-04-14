@@ -1,3 +1,13 @@
+---
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "**/*.scss"
+  - "vite.config.*"
+  - "next.config.*"
+---
+
 # Frontend Standards
 
 This file contains all frontend-specific conventions. Apply these rules when working on a frontend project.

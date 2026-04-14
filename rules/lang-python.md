@@ -1,3 +1,11 @@
+---
+paths:
+  - "**/*.py"
+  - "pyproject.toml"
+  - "requirements.txt"
+  - "uv.lock"
+---
+
 # Python Standards
 
 This file contains all Python specific conventions. Apply these rules when working in a Python project.
