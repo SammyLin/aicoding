@@ -61,13 +61,15 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ### How the 5-step flow is supported by tooling
 
-| Step | Tool |
-|------|------|
-| 1. Research | Claude Code's built-in Explore subagent |
-| 2. Plan | Claude Code's built-in Plan subagent |
-| 3. Implement | Main conversation + `auto-format` hook cleans up after every edit |
-| 4. **Verify** | `/review` → `code-reviewer` subagent does an independent pass |
-| 5. **Commit** | `/commit` → lint + test + conventional commit message |
+| Step | Claude Code | Kiro CLI |
+|------|-------------|----------|
+| 1. Research | Built-in Explore subagent | Main chat session |
+| 2. Plan | Built-in Plan subagent | Main chat session |
+| 3. Implement | Main conversation + `auto-format` hook | Main chat session |
+| 4. **Verify** | `/review` → `code-reviewer` subagent | `kiro-cli chat --agent code-reviewer "review current changes"` |
+| 5. **Commit** | `/commit` → lint + test + conventional message | Run lint/test manually, then commit (Kiro has no slash command) |
+
+**Why the difference:** Kiro CLI does not support user-defined slash commands or auto-format hooks. The `code-reviewer` agent does get installed to `.kiro/agents/code-reviewer.json`, so you still get the structured-review benefit — you just invoke it differently.
 
 ## Install
 
