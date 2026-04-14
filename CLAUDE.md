@@ -4,37 +4,38 @@ Team AI-coding standards installer for bootstrapping new projects. Built on **pr
 
 ## Repo Layout
 
+The source layout mirrors the install target 1:1 — what you see here is what gets deployed to `.claude/`.
+
 ```
-Core rules (always installed to .claude/rules/):
-  ai-behavior.md         — 5-step flow, commit frequency
-  code-quality.md        — TDD, error handling, typing
-  architecture.md        — Layered architecture, DI
+rules/                       → .claude/rules/
+  ai-behavior.md             — 5-step flow, commit frequency
+  code-quality.md            — TDD, error handling, typing
+  architecture.md            — Layered architecture, DI
+  lang-node.md               — auto-detected by package.json; has paths: frontmatter
+  lang-python.md             — auto-detected by pyproject.toml / requirements.txt
+  lang-go.md                 — auto-detected by go.mod
+  lang-frontend.md           — auto-detected by .tsx / vite.config / React
 
-Language rules (auto-detected; have `paths:` frontmatter, loaded only when relevant files are in context):
-  lang-node.md           — when package.json exists
-  lang-python.md         — when pyproject.toml / requirements.txt exists
-  lang-go.md             — when go.mod exists
-  lang-frontend.md       — when .tsx / vite.config / React is present
+skills/                      → .claude/skills/<name>/SKILL.md (wrapped by setup.sh)
+  security.md                → security-check
+  project-ops.md             → infra-ops
+  harness-engineering.md     → harness-review
+  agent-browser-skill.md     → browser-verify
 
-Situational rules (wrapped as Skills, invoked by the agent on demand):
-  security.md            → .claude/skills/security-check/SKILL.md
-  project-ops.md         → .claude/skills/infra-ops/SKILL.md
-  harness-engineering.md → .claude/skills/harness-review/SKILL.md
-  agent-browser-skill.md → .claude/skills/browser-verify/SKILL.md
+agents/                      → .claude/agents/
+  code-reviewer.md           — subagent for the Verify step
 
-Agent + Commands (support Verify / Commit flow):
-  agents/code-reviewer.md    → .claude/agents/code-reviewer.md
-  commands/commit.md         → .claude/commands/commit.md
-  commands/review.md         → .claude/commands/review.md
+commands/                    → .claude/commands/
+  commit.md                  — /commit
+  review.md                  — /review
 
-Hooks + Settings (automation and permissions):
-  hooks/auto-format.sh       → .claude/hooks/auto-format.sh
-  hooks/secret-guard.sh      → .claude/hooks/secret-guard.sh
-  settings.json              → .claude/settings.json
+hooks/                       → .claude/hooks/
+  auto-format.sh             — PostToolUse Edit/Write
+  secret-guard.sh            — PreToolUse Bash
 
-Other:
-  setup.sh                   — Installer (language detection, Kiro format conversion)
-  docs/                      — Knowledge base (not installed to target projects)
+settings.json                → .claude/settings.json
+setup.sh                     — Installer (language detection, Kiro format conversion)
+docs/                        — Knowledge base (not installed to target projects)
 ```
 
 ## 5-Layer Design
@@ -71,12 +72,12 @@ Kiro CLI's format doesn't fully overlap with Claude Code. `setup.sh` handles the
 
 ### Adding a Skill
 
-1. Write the source file `foo.md`.
+1. Write the source file `skills/foo.md`.
 2. Add to `setup.sh` arrays: `SKILL_NAMES` / `SKILL_SOURCES` / `SKILL_DESCRIPTIONS`.
 
 ### Adding a Language
 
-1. Write `lang-xxx.md` with a `paths:` frontmatter at the top.
+1. Write `rules/lang-xxx.md` with a `paths:` frontmatter at the top.
 2. Add to `setup.sh` arrays: `LANG_FILES` / `LANG_DETECT` / `LANG_LABELS` / `LANG_DESCRIPTIONS` / `LANG_KIRO_PATTERN`.
 
 ### Adding an Agent / Command / Hook

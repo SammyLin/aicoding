@@ -20,6 +20,10 @@ BASE_URL="${BASE_URL:-https://raw.githubusercontent.com/SammyLin/aicoding/main}"
 SOURCE="${SOURCE:-https://github.com/SammyLin/aicoding}"
 INSTALLED_AT="$(date +%Y-%m-%d)"
 
+# Source layout on the remote (this repo). Mirrors the install target under .claude/.
+RULES_SRC_DIR="rules"
+SKILLS_SRC_DIR="skills"
+
 # ── Layer 1: Core rules (always loaded, no path scoping) ──
 CORE_FILES=(
   "ai-behavior.md"
@@ -297,7 +301,7 @@ generate_claude() {
   # Layer 1: Core rules
   echo "Layer 1 — Core rules (always loaded):"
   for file in "${CORE_FILES[@]}"; do
-    download_file "$BASE_URL/$file" "$rules_dir/$file"
+    download_file "$BASE_URL/$RULES_SRC_DIR/$file" "$rules_dir/$file"
   done
 
   # Layer 2: Language rules (source files already have paths: frontmatter)
@@ -311,12 +315,12 @@ generate_claude() {
   if [ ${#detected[@]} -eq 0 ]; then
     echo "  No languages detected — installing all."
     for i in "${!LANG_FILES[@]}"; do
-      download_file "$BASE_URL/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
+      download_file "$BASE_URL/$RULES_SRC_DIR/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
     done
   else
     for i in "${detected[@]}"; do
       echo "  Detected: ${LANG_LABELS[$i]}"
-      download_file "$BASE_URL/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
+      download_file "$BASE_URL/$RULES_SRC_DIR/${LANG_FILES[$i]}" "$rules_dir/${LANG_FILES[$i]}"
     done
   fi
 
@@ -326,7 +330,7 @@ generate_claude() {
   for i in "${!SKILL_NAMES[@]}"; do
     local tmp_file
     tmp_file=$(mktemp)
-    if curl -fsSL "$BASE_URL/${SKILL_SOURCES[$i]}" -o "$tmp_file" 2>/dev/null; then
+    if curl -fsSL "$BASE_URL/$SKILLS_SRC_DIR/${SKILL_SOURCES[$i]}" -o "$tmp_file" 2>/dev/null; then
       local content
       content=$(cat "$tmp_file")
       make_skill "${SKILL_NAMES[$i]}" "${SKILL_DESCRIPTIONS[$i]}" "$content" \
@@ -539,7 +543,7 @@ generate_kiro() {
   for file in "${CORE_FILES[@]}"; do
     local tmp
     tmp=$(mktemp)
-    if curl -fsSL "$BASE_URL/$file" -o "$tmp" 2>/dev/null; then
+    if curl -fsSL "$BASE_URL/$RULES_SRC_DIR/$file" -o "$tmp" 2>/dev/null; then
       make_kiro_steering "$tmp" "$steering_dir/$file" ""
       echo "  ✓ $file"
     else
@@ -567,7 +571,7 @@ generate_kiro() {
   for i in "${lang_indices[@]}"; do
     local tmp
     tmp=$(mktemp)
-    if curl -fsSL "$BASE_URL/${LANG_FILES[$i]}" -o "$tmp" 2>/dev/null; then
+    if curl -fsSL "$BASE_URL/$RULES_SRC_DIR/${LANG_FILES[$i]}" -o "$tmp" 2>/dev/null; then
       make_kiro_steering "$tmp" "$steering_dir/${LANG_FILES[$i]}" "${LANG_KIRO_PATTERN[$i]}"
       echo "  ✓ ${LANG_FILES[$i]} → ${LANG_KIRO_PATTERN[$i]}"
     else
@@ -583,7 +587,7 @@ generate_kiro() {
   for i in "${!SKILL_SOURCES[@]}"; do
     local tmp
     tmp=$(mktemp)
-    if curl -fsSL "$BASE_URL/${SKILL_SOURCES[$i]}" -o "$tmp" 2>/dev/null; then
+    if curl -fsSL "$BASE_URL/$SKILLS_SRC_DIR/${SKILL_SOURCES[$i]}" -o "$tmp" 2>/dev/null; then
       {
         echo "---"
         echo "inclusion: manual"

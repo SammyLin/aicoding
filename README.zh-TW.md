@@ -111,27 +111,27 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 
 | 檔案 | 內容 |
 |------|------|
-| [ai-behavior.md](ai-behavior.md) | 5 步驟 flow、commit 頻率、completion report |
-| [code-quality.md](code-quality.md) | TDD、錯誤處理、typing、API endpoint 流程 |
-| [architecture.md](architecture.md) | 分層架構、DI、模組邊界 |
+| [rules/ai-behavior.md](rules/ai-behavior.md) | 5 步驟 flow、commit 頻率、completion report |
+| [rules/code-quality.md](rules/code-quality.md) | TDD、錯誤處理、typing、API endpoint 流程 |
+| [rules/architecture.md](rules/architecture.md) | 分層架構、DI、模組邊界 |
 
 ### Language Rules — 偵測到才裝
 
 | 檔案 | 語言 | 涵蓋 |
 |------|------|------|
-| [lang-node.md](lang-node.md) | Node / TypeScript | pnpm、ESLint、Prettier、Zod、vitest |
-| [lang-python.md](lang-python.md) | Python | uv、ruff、FastAPI、Pydantic、pytest |
-| [lang-go.md](lang-go.md) | Go | go mod、golangci-lint、table-driven tests |
-| [lang-frontend.md](lang-frontend.md) | Frontend | React、元件設計、a11y |
+| [rules/lang-node.md](rules/lang-node.md) | Node / TypeScript | pnpm、ESLint、Prettier、Zod、vitest |
+| [rules/lang-python.md](rules/lang-python.md) | Python | uv、ruff、FastAPI、Pydantic、pytest |
+| [rules/lang-go.md](rules/lang-go.md) | Go | go mod、golangci-lint、table-driven tests |
+| [rules/lang-frontend.md](rules/lang-frontend.md) | Frontend | React、元件設計、a11y |
 
 ### Skills — Claude 按需呼叫
 
 | Skill | 來源 | 觸發場景 |
 |-------|------|---------|
-| `security-check` | [security.md](security.md) | 新增 API、上線前、處理使用者輸入 |
-| `infra-ops` | [project-ops.md](project-ops.md) | Docker、CI/CD、git workflow |
-| `harness-review` | [harness-engineering.md](harness-engineering.md) | 系統性改進 |
-| `browser-verify` | [agent-browser-skill.md](agent-browser-skill.md) | 前端視覺驗證 |
+| `security-check` | [skills/security.md](skills/security.md) | 新增 API、上線前、處理使用者輸入 |
+| `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker、CI/CD、git workflow |
+| `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | 系統性改進 |
+| `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | 前端視覺驗證 |
 
 ### Agent + Commands — 支撐 Verify / Commit
 

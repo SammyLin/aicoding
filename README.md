@@ -111,27 +111,27 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 
 | File | Content |
 |------|---------|
-| [ai-behavior.md](ai-behavior.md) | 5-step flow, commit frequency, completion report |
-| [code-quality.md](code-quality.md) | TDD, error handling, typing, API endpoint flow |
-| [architecture.md](architecture.md) | Layered architecture, DI, module boundaries |
+| [rules/ai-behavior.md](rules/ai-behavior.md) | 5-step flow, commit frequency, completion report |
+| [rules/code-quality.md](rules/code-quality.md) | TDD, error handling, typing, API endpoint flow |
+| [rules/architecture.md](rules/architecture.md) | Layered architecture, DI, module boundaries |
 
 ### Language Rules — installed when detected
 
 | File | Language | Covers |
 |------|----------|--------|
-| [lang-node.md](lang-node.md) | Node / TypeScript | pnpm, ESLint, Prettier, Zod, vitest |
-| [lang-python.md](lang-python.md) | Python | uv, ruff, FastAPI, Pydantic, pytest |
-| [lang-go.md](lang-go.md) | Go | go mod, golangci-lint, table-driven tests |
-| [lang-frontend.md](lang-frontend.md) | Frontend | React, component design, a11y |
+| [rules/lang-node.md](rules/lang-node.md) | Node / TypeScript | pnpm, ESLint, Prettier, Zod, vitest |
+| [rules/lang-python.md](rules/lang-python.md) | Python | uv, ruff, FastAPI, Pydantic, pytest |
+| [rules/lang-go.md](rules/lang-go.md) | Go | go mod, golangci-lint, table-driven tests |
+| [rules/lang-frontend.md](rules/lang-frontend.md) | Frontend | React, component design, a11y |
 
 ### Skills — agent-invoked on demand
 
 | Skill | Source | Trigger |
 |-------|--------|---------|
-| `security-check` | [security.md](security.md) | adding APIs, shipping, handling user input |
-| `infra-ops` | [project-ops.md](project-ops.md) | Docker, CI/CD, git workflow |
-| `harness-review` | [harness-engineering.md](harness-engineering.md) | systemic improvements |
-| `browser-verify` | [agent-browser-skill.md](agent-browser-skill.md) | frontend visual verification |
+| `security-check` | [skills/security.md](skills/security.md) | adding APIs, shipping, handling user input |
+| `infra-ops` | [skills/project-ops.md](skills/project-ops.md) | Docker, CI/CD, git workflow |
+| `harness-review` | [skills/harness-engineering.md](skills/harness-engineering.md) | systemic improvements |
+| `browser-verify` | [skills/agent-browser-skill.md](skills/agent-browser-skill.md) | frontend visual verification |
 
 ### Agent + Commands — supporting Verify / Commit
 
