@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Bundled at publish time by scripts/copy-sources.mjs — do NOT commit copies.
+# Real sources live at the repo root.
+rules/
+skills/
+agents/
+commands/
+hooks/
+settings.json
+*.tgz

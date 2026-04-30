@@ -1,0 +1,46 @@
+{
+  "name": "rigging",
+  "version": "0.0.0",
+  "description": "Rig your project with team AI-coding standards — installer for Claude Code, Kiro, and AGENTS.md-compatible tools.",
+  "type": "module",
+  "bin": {
+    "rigging": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "rules",
+    "skills",
+    "agents",
+    "commands",
+    "hooks",
+    "settings.json"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "lint": "eslint . && prettier --check .",
+    "lint:fix": "eslint --fix . && prettier --write .",
+    "copy-sources": "node scripts/copy-sources.mjs",
+    "clean-sources": "node scripts/copy-sources.mjs --clean",
+    "prepack": "pnpm run build && pnpm run copy-sources",
+    "postpack": "pnpm run clean-sources"
+  },
+  "dependencies": {
+    "cac": "^6.7.14"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^20.17.0",
+    "eslint": "^9.13.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.12.0",
+    "vitest": "^2.1.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

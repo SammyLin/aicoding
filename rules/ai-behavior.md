@@ -23,8 +23,8 @@ Follow this exact sequence when you receive a task:
 
 ```
 1. List the files you will create or modify.
-2. If touching >3 files or making architecture decisions → present the plan to the user and ask for confirmation.
-3. If touching 1-2 files and the task is clear → proceed directly.
+2. If touching >3 files or making architecture decisions → produce a PRP (see prp-template.md), present it to the user, and wait for confirmation.
+3. If touching 1-2 files and the task is clear → proceed directly. No PRP needed.
 4. Break the work into small, verifiable steps.
 ```
 
