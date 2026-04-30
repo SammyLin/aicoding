@@ -17,11 +17,13 @@
 - `.env` 會被不小心讀進 context
 - commit message 各寫各的
 
-這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。
+這個 repo 把團隊的最佳實踐固化成**一條指令就能裝起來**的標準配置。安裝器叫 **rigging**（裝在 AI agent 周圍的支撐結構）：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
+npx rigging init
 ```
+
+> 舊的 `curl | bash` 安裝器（`setup.sh`）暫時還能跑但已棄用。詳見下方 [安裝](#安裝)。
 
 ## 裝了什麼？（Claude Code）
 
@@ -75,14 +77,30 @@ CLAUDE.md                     ← 主檔（短，用 @import 引入規則）
 
 ```bash
 # Claude Code（自動偵測專案語言）
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
+npx rigging init
 
 # Kiro CLI
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
+npx rigging init --target kiro
 
 # 兩個都裝
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
+npx rigging init --target all
+
+# rigging 釋出新版後刷新
+npx rigging upgrade --target all
+
+# 移除（保留 user 自編輯的檔案）
+npx rigging uninstall
 ```
+
+### 舊版 bash 安裝器（已棄用）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
+```
+
+`setup.sh` 還能跑但正逐步淘汰。它的 Kiro 輸出有部分欄位是錯的（詳見 `docs/exec-plans/active/v2-cli-rewrite.md` D6）—— `npx rigging init` 是支援中的路徑。
 
 ### 語言自動偵測
 
@@ -101,7 +119,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 | Claude Code | Kiro CLI | 狀態 |
 |------------|---------|------|
 | Rules（`paths:`） | Steering（`inclusion: fileMatch` + `fileMatchPattern`） | ✅ 自動轉換 |
-| Skills | Steering `inclusion: manual` | ✅ 裝在 `on-demand/` |
+| Skills | Skills (`.kiro/skills/<name>/SKILL.md`) | ✅ 裝在官方規範路徑 |
 | Agents（markdown） | Agents（**JSON**） | ✅ 自動轉換格式 |
 | Commands（`/commit`） | — | ❌ Kiro CLI 無對應功能 |
 | Hooks | Hooks（event 名不同） | ❌ 模型差太多，不硬裝 |
@@ -116,6 +134,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 | [rules/ai-behavior.md](rules/ai-behavior.md) | 5 步驟 flow、commit 頻率、completion report |
 | [rules/code-quality.md](rules/code-quality.md) | TDD、錯誤處理、typing、API endpoint 流程 |
 | [rules/architecture.md](rules/architecture.md) | 分層架構、DI、模組邊界 |
+| [rules/prp-template.md](rules/prp-template.md) | PRP 模板（任務 >3 檔時要先產 PRP） |
 
 ### Language Rules — 偵測到才裝
 
@@ -154,7 +173,7 @@ Kiro CLI 跟 Claude Code 的設計模型不完全重疊，對應表：
 ## 更新
 
 ```bash
-./.aicoding-update.sh
+npx rigging upgrade --target all
 ```
 
 ## 知識庫 (`docs/`)

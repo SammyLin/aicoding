@@ -17,11 +17,13 @@ When a team starts a new project, every member's AI-agent setup differs, leading
 - `.env` accidentally pulled into context
 - Commit messages all over the place
 
-This repo codifies the team's best practices into a one-command installer.
+This repo codifies the team's best practices. The installer is a small CLI called **rigging** (the harness around your AI agents):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
+npx rigging init
 ```
+
+> The legacy `curl | bash` installer (`setup.sh`) still works for now but is deprecated. See [Install](#install) below.
 
 ## What gets installed (Claude Code)
 
@@ -75,14 +77,30 @@ CLAUDE.md                     ← main file (short, @imports rules)
 
 ```bash
 # Claude Code (auto-detects project language)
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
+npx rigging init
 
 # Kiro CLI
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
+npx rigging init --target kiro
 
 # Both
-curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
+npx rigging init --target all
+
+# Refresh after a new rigging release
+npx rigging upgrade --target all
+
+# Remove (preserves user-edited files)
+npx rigging uninstall
 ```
+
+### Legacy installer (deprecated)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
+curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
+```
+
+The bash installer (`setup.sh`) still works but is being phased out. It also produces incorrect Kiro CLI output for some fields (see `docs/exec-plans/active/v2-cli-rewrite.md` D6) — `npx rigging init` is the supported path.
 
 ### Language auto-detection
 
@@ -101,7 +119,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 | Claude Code | Kiro CLI | Status |
 |-------------|----------|--------|
 | Rules (`paths:`) | Steering (`inclusion: fileMatch` + `fileMatchPattern`) | ✅ auto-converted |
-| Skills | Steering `inclusion: manual` | ✅ installed under `on-demand/` |
+| Skills | Skills (`.kiro/skills/<name>/SKILL.md`) | ✅ installed at official path |
 | Agents (markdown) | Agents (**JSON**) | ✅ format auto-converted |
 | Commands (`/commit`) | — | ❌ Kiro CLI has no equivalent |
 | Hooks | Hooks (different events) | ❌ model too different — not installed |
@@ -116,6 +134,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 | [rules/ai-behavior.md](rules/ai-behavior.md) | 5-step flow, commit frequency, completion report |
 | [rules/code-quality.md](rules/code-quality.md) | TDD, error handling, typing, API endpoint flow |
 | [rules/architecture.md](rules/architecture.md) | Layered architecture, DI, module boundaries |
+| [rules/prp-template.md](rules/prp-template.md) | Plan Reference Packet template for >3-file tasks |
 
 ### Language Rules — installed when detected
 
@@ -154,7 +173,7 @@ Kiro CLI's design model doesn't fully overlap with Claude Code. Mapping:
 ## Update
 
 ```bash
-./.aicoding-update.sh
+npx rigging upgrade --target all
 ```
 
 ## Knowledge Base (`docs/`)

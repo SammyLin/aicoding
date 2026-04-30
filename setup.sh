@@ -12,13 +12,36 @@ set -euo pipefail
 #   Layer 5. Hooks + Settings   — auto-format, secret-guard, permissions
 #
 # Usage:
-#   Claude Code: curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash
-#   Kiro CLI:    curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --kiro
-#   Both:        curl -fsSL https://raw.githubusercontent.com/SammyLin/aicoding/main/setup.sh | bash -s -- --all
+#   Claude Code: curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash
+#   Kiro CLI:    curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --kiro
+#   Both:        curl -fsSL https://raw.githubusercontent.com/SammyLin/rigging/main/setup.sh | bash -s -- --all
 
-BASE_URL="${BASE_URL:-https://raw.githubusercontent.com/SammyLin/aicoding/main}"
-SOURCE="${SOURCE:-https://github.com/SammyLin/aicoding}"
+BASE_URL="${BASE_URL:-https://raw.githubusercontent.com/SammyLin/rigging/main}"
+SOURCE="${SOURCE:-https://github.com/SammyLin/rigging}"
 INSTALLED_AT="$(date +%Y-%m-%d)"
+
+# ── DEPRECATION NOTICE ──
+# setup.sh is being phased out in favor of the `rigging` CLI on npm.
+# It also produces incorrect Kiro CLI output for `fileMatchPattern` and the
+# agent JSON tool names — `npx rigging init` is the supported path.
+#
+# Migrate when convenient:
+#     npx rigging init                    # Claude Code
+#     npx rigging init --target kiro      # Kiro CLI
+#     npx rigging init --target all       # both
+#
+# This script will continue to run for now. The deprecation will turn into
+# a hard removal in a future release; track docs/exec-plans/active/v2-cli-rewrite.md.
+if [ -t 1 ]; then
+  printf '\n\033[33m! setup.sh is deprecated — use `npx rigging init` instead.\033[0m\n'
+  printf '  Continuing legacy install in 2 seconds (Ctrl-C to abort)...\n\n'
+  sleep 2
+else
+  echo ""
+  echo "! setup.sh is deprecated — use \`npx rigging init\` instead."
+  echo "  See https://github.com/SammyLin/rigging/blob/main/README.md#install"
+  echo ""
+fi
 
 # Source layout on the remote (this repo). Mirrors the install target under .claude/.
 RULES_SRC_DIR="rules"
@@ -29,11 +52,13 @@ CORE_FILES=(
   "ai-behavior.md"
   "code-quality.md"
   "architecture.md"
+  "prp-template.md"
 )
 CORE_DESCRIPTIONS=(
   "AI agent 5-step flow, commit frequency, completion report"
   "Code quality, TDD, error handling, typing"
   "Layered architecture, DI, module boundaries"
+  "Plan Reference Packet template for >3-file tasks"
 )
 
 # ── Layer 2: Language rules (auto-detected per project) ──
@@ -136,7 +161,7 @@ make_skill() {
     echo "---"
     echo "name: $name"
     echo "description: \"$description\""
-    echo "managed-by: aicoding"
+    echo "managed-by: rigging"
     echo "---"
     echo ""
     echo "$source_content"
@@ -161,7 +186,7 @@ make_kiro_steering() {
     else
       echo "inclusion: always"
     fi
-    echo "managed-by: aicoding"
+    echo "managed-by: rigging"
     echo "---"
     strip_frontmatter "$src"
   } > "$dest"
@@ -223,7 +248,7 @@ make_kiro_agent() {
 EOF
 }
 
-# Remove aicoding-managed files (preserve user-created ones).
+# Remove rigging-managed files (preserve user-created ones).
 clean_managed_claude() {
   local rules_dir=".claude/rules"
   local skills_dir=".claude/skills"
@@ -242,7 +267,7 @@ clean_managed_claude() {
     for skill_dir in "$skills_dir"/*/; do
       [ -d "$skill_dir" ] || continue
       local skill_file="$skill_dir/SKILL.md"
-      if [ -f "$skill_file" ] && grep -q "managed-by: aicoding" "$skill_file" 2>/dev/null; then
+      if [ -f "$skill_file" ] && grep -q "managed-by: rigging" "$skill_file" 2>/dev/null; then
         rm -rf "$skill_dir"
       fi
     done
@@ -265,17 +290,17 @@ clean_managed_kiro() {
   local steering_dir=".kiro/steering"
   local agents_dir=".kiro/agents"
 
-  # Remove aicoding-tagged steering files
+  # Remove rigging-tagged steering files
   if [ -d "$steering_dir" ]; then
     for f in "$steering_dir"/*.md "$steering_dir"/on-demand/*.md; do
       [ -f "$f" ] || continue
-      if grep -q "managed-by: aicoding" "$f" 2>/dev/null; then
+      if grep -q "managed-by: rigging" "$f" 2>/dev/null; then
         rm -f "$f"
       fi
     done
   fi
 
-  # Remove aicoding-tagged agents
+  # Remove rigging-tagged agents
   if [ -d "$agents_dir" ]; then
     for f in "$agents_dir"/*.json; do
       [ -f "$f" ] || continue
@@ -394,10 +419,10 @@ install_settings_json() {
 
   # Otherwise, install as sidecar and surface a concise diff so the user
   # knows exactly what changed without having to hunt for it.
-  local sidecar=".claude/settings.aicoding.json"
+  local sidecar=".claude/settings.rigging.json"
   cp "$tmp" "$sidecar"
   echo "  ! .claude/settings.json differs from team standard"
-  echo "    Team version installed as .claude/settings.aicoding.json"
+  echo "    Team version installed as .claude/settings.rigging.json"
 
   if command -v diff >/dev/null 2>&1; then
     # Temporarily disable pipefail: `head -N` SIGPIPEs upstream which would
@@ -416,8 +441,8 @@ install_settings_json() {
       printf '%s\n' "$summary" | sed 's/^/      /'
       echo "    ─────────────────────────────────────"
       echo ""
-      echo "    Full diff:  diff -u .claude/settings.json .claude/settings.aicoding.json"
-      echo "    Accept:     mv .claude/settings.aicoding.json .claude/settings.json"
+      echo "    Full diff:  diff -u .claude/settings.json .claude/settings.rigging.json"
+      echo "    Accept:     mv .claude/settings.rigging.json .claude/settings.json"
     fi
   else
     echo "    Compare manually: diff -u .claude/settings.json $sidecar"
@@ -427,14 +452,14 @@ install_settings_json() {
 
 generate_claude_md() {
   local claude_md="CLAUDE.md"
-  local marker_start="<!-- aicoding:start -->"
-  local marker_end="<!-- aicoding:end -->"
+  local marker_start="<!-- rigging:start -->"
+  local marker_end="<!-- rigging:end -->"
 
-  # Build the aicoding section using @import style.
+  # Build the rigging section using @import style.
   # Keeps CLAUDE.md short; details live in the rule files.
-  local aicoding_section
-  aicoding_section="${marker_start}
-# aicoding standards
+  local rigging_section
+  rigging_section="${marker_start}
+# rigging standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
 
@@ -465,35 +490,35 @@ Language rules (load only when matching files are in context):"
   [ -n "$_det" ] && read -ra detected <<< "$_det"
   if [ ${#detected[@]} -gt 0 ]; then
     for i in "${detected[@]}"; do
-      aicoding_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
+      rigging_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
     done
   else
     for i in "${!LANG_FILES[@]}"; do
-      aicoding_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
+      rigging_section+=$'\n'"- @.claude/rules/${LANG_FILES[$i]}"
     done
   fi
 
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"## Skills (agent-invoked on demand)"
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"Skills live in \`.claude/skills/\`. Claude loads one only when its description matches the task."
-  aicoding_section+=$'\n'
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"## Skills (agent-invoked on demand)"
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"Skills live in \`.claude/skills/\`. Claude loads one only when its description matches the task."
+  rigging_section+=$'\n'
   for i in "${!SKILL_NAMES[@]}"; do
-    aicoding_section+=$'\n'"- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}"
+    rigging_section+=$'\n'"- **${SKILL_NAMES[$i]}**: ${SKILL_DESCRIPTIONS[$i]}"
   done
 
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"## Subagent + Commands"
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"- Subagent **code-reviewer** — structured review against core rules (no edits)"
-  aicoding_section+=$'\n'"- Command **/review** — invokes code-reviewer on current diff"
-  aicoding_section+=$'\n'"- Command **/commit** — lint + test + conventional commit message"
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"## Hooks (automatic)"
-  aicoding_section+=$'\n'
-  aicoding_section+=$'\n'"- **PostToolUse** (Edit/Write/MultiEdit) → \`.claude/hooks/auto-format.sh\` (gofmt / ruff / prettier)"
-  aicoding_section+=$'\n'"- **PreToolUse** (Bash) → \`.claude/hooks/secret-guard.sh\` (blocks \`.env\`, \`rm -rf\`, \`curl|sh\`)"
-  aicoding_section+=$'\n'"${marker_end}"
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"## Subagent + Commands"
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"- Subagent **code-reviewer** — structured review against core rules (no edits)"
+  rigging_section+=$'\n'"- Command **/review** — invokes code-reviewer on current diff"
+  rigging_section+=$'\n'"- Command **/commit** — lint + test + conventional commit message"
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"## Hooks (automatic)"
+  rigging_section+=$'\n'
+  rigging_section+=$'\n'"- **PostToolUse** (Edit/Write/MultiEdit) → \`.claude/hooks/auto-format.sh\` (gofmt / ruff / prettier)"
+  rigging_section+=$'\n'"- **PreToolUse** (Bash) → \`.claude/hooks/secret-guard.sh\` (blocks \`.env\`, \`rm -rf\`, \`curl|sh\`)"
+  rigging_section+=$'\n'"${marker_end}"
 
   if [ -f "$claude_md" ] && grep -q "$marker_start" "$claude_md"; then
     local before_file after_file new_file
@@ -508,22 +533,22 @@ Language rules (load only when matching files are in context):"
     done < "$claude_md"
     {
       [ -s "$before_file" ] && cat "$before_file"
-      echo "$aicoding_section"
+      echo "$rigging_section"
       [ -s "$after_file" ] && cat "$after_file"
     } > "$new_file"
     mv "$new_file" "$claude_md"
     rm -f "$before_file" "$after_file"
-    echo "✓ Updated aicoding section in $claude_md (preserved project-specific content)"
+    echo "✓ Updated rigging section in $claude_md (preserved project-specific content)"
   elif [ -f "$claude_md" ]; then
     local tmp_file
     tmp_file=$(mktemp)
-    echo "$aicoding_section" > "$tmp_file"
+    echo "$rigging_section" > "$tmp_file"
     echo "" >> "$tmp_file"
     cat "$claude_md" >> "$tmp_file"
     mv "$tmp_file" "$claude_md"
-    echo "✓ Prepended aicoding section to existing $claude_md"
+    echo "✓ Prepended rigging section to existing $claude_md"
   else
-    echo "$aicoding_section" > "$claude_md"
+    echo "$rigging_section" > "$claude_md"
     echo "✓ Generated $claude_md"
   fi
 }
@@ -591,7 +616,7 @@ generate_kiro() {
       {
         echo "---"
         echo "inclusion: manual"
-        echo "managed-by: aicoding"
+        echo "managed-by: rigging"
         echo "---"
         cat "$tmp"
       } > "$steering_dir/on-demand/${SKILL_SOURCES[$i]}"
@@ -617,9 +642,9 @@ generate_kiro() {
   cat > "$entry_file" << ENTRY
 ---
 inclusion: always
-managed-by: aicoding
+managed-by: rigging
 ---
-# aicoding standards
+# rigging standards
 # source: ${SOURCE}
 # installed: ${INSTALLED_AT}
 
@@ -678,13 +703,13 @@ case "$TARGET" in
   kiro) args=" -s -- --kiro" ;;
   all)  args=" -s -- --all" ;;
 esac
-cat > ".aicoding-update.sh" << EOF
+cat > ".rigging-update.sh" << EOF
 #!/usr/bin/env bash
 curl -fsSL ${BASE_URL}/setup.sh | bash${args}
 EOF
-chmod +x ".aicoding-update.sh"
+chmod +x ".rigging-update.sh"
 echo ""
-echo "✓ Generated .aicoding-update.sh"
+echo "✓ Generated .rigging-update.sh"
 
 # Summary
 echo ""
@@ -714,4 +739,4 @@ if [ "$TARGET" = "kiro" ] || [ "$TARGET" = "all" ]; then
   echo "  .kiro/agents/       ← ${kiro_agents} agent(s)"
 fi
 echo ""
-echo "Update: ./.aicoding-update.sh"
+echo "Update: ./.rigging-update.sh"

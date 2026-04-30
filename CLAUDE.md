@@ -1,4 +1,4 @@
-# aicoding repo
+# rigging repo
 
 Team AI-coding standards installer for bootstrapping new projects. Built on **progressive disclosure**: core rules always loaded, language rules gated by `paths:`, situational rules invoked as Skills, plus Agent + Commands + Hooks to support the 5-step flow.
 
